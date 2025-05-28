@@ -1,4 +1,4 @@
-// Save this as: StoneTopEstimator.jsx (in the src folder)
+// Save this as: src/StoneTopEstimator.jsx
 import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ProgressSteps } from './components/ProgressSteps';
@@ -13,6 +13,7 @@ import { calculateProductResults } from './utils/calculations';
 import { generateQuotePDF } from './utils/pdfGenerator';
 import { sendQuoteEmail } from './utils/emailService';
 import { analyzeDrawingWithAI, handleClaudeMultiplePiecesExtraction } from './utils/aiDrawingAnalysis';
+import { optimizeMultiProductLayout, applyMultiProductOptimization } from './utils/multiProductOptimization';
 
 export default function StoneTopEstimator() {
   // State management
@@ -33,6 +34,7 @@ export default function StoneTopEstimator() {
     }
   ]);
   const [allResults, setAllResults] = useState([]);
+  const [optimizationData, setOptimizationData] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [showSavedQuotes, setShowSavedQuotes] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
@@ -45,7 +47,8 @@ export default function StoneTopEstimator() {
     includeKerf: true,
     kerfWidth: 0.125,
     breakageBuffer: 10,
-    showVisualLayouts: true
+    showVisualLayouts: true,
+    multiProductOptimization: false
   });
 
   // Load saved quotes and stone data on mount
@@ -126,9 +129,21 @@ export default function StoneTopEstimator() {
 
   // Calculate all products
   const calculateAll = () => {
-    const results = products.map((product) => 
-      calculateProductResults(product, stoneOptions, settings)
-    );
+    let results;
+    let optimizationResults = null;
+    
+    if (settings.multiProductOptimization) {
+      // Use multi-product optimization
+      optimizationResults = optimizeMultiProductLayout(products, stoneOptions, settings);
+      results = applyMultiProductOptimization(products, optimizationResults, stoneOptions, settings);
+      setOptimizationData(optimizationResults);
+    } else {
+      // Use standard calculation
+      results = products.map((product) => 
+        calculateProductResults(product, stoneOptions, settings)
+      );
+      setOptimizationData(null);
+    }
     
     setAllResults(results);
     setShowResults(true);
@@ -207,6 +222,7 @@ export default function StoneTopEstimator() {
     return (
       <ResultsView 
         allResults={allResults}
+        optimizationData={optimizationData}
         stoneOptions={stoneOptions}
         userInfo={userInfo}
         settings={settings}
