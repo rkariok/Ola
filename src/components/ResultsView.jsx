@@ -8,6 +8,8 @@ import {
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
 import { MultiProductSlabVisualization } from './MultiProductSlabVisualization';
 import { optimizeMultiProductLayout } from '../utils/multiProductOptimization';
+import { generateQuotePDF } from '../utils/pdfGenerator';
+import { sendQuoteEmail } from '../utils/emailService';
 
 export const ResultsView = ({ 
   allResults, 
@@ -70,6 +72,19 @@ export const ResultsView = ({
     avgEfficiency = allResults.length > 0 ? 
       (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
   }
+
+  // PDF and Email handlers
+  const handleGeneratePDF = () => {
+    generateQuotePDF(allResults, userInfo, stoneOptions, settings, optimizationData);
+  };
+
+  const handleSendEmail = async () => {
+    if (onSendEmail) {
+      await onSendEmail();
+    } else {
+      await sendQuoteEmail(userInfo, allResults, stoneOptions);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -391,7 +406,7 @@ export const ResultsView = ({
         {/* Action Buttons */}
         <div className="flex flex-wrap justify-center gap-4 mt-8">
           <Button
-            onClick={onGeneratePDF}
+            onClick={handleGeneratePDF}
             size="lg"
             variant="outline"
           >
@@ -399,7 +414,7 @@ export const ResultsView = ({
             Generate PDF
           </Button>
           <Button
-            onClick={onSendEmail}
+            onClick={handleSendEmail}
             disabled={sendingEmail || !userInfo.email}
             size="lg"
             variant="outline"
