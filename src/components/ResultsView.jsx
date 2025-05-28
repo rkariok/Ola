@@ -3,7 +3,7 @@ import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { 
   Sparkles, DollarSign, Package, TrendingUp, BarChart3, 
-  Info, CheckCircle, FileText, Mail 
+  Info, CheckCircle, FileText, Mail, Layers, Share2 
 } from './icons/Icons';
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
 
@@ -22,6 +22,14 @@ export const ResultsView = ({
   const totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
   const avgEfficiency = allResults.length > 0 ? 
     (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+
+  // Check if optimization was used
+  const isOptimized = settings?.optimizeAcrossProducts && 
+    allResults.some(p => p.result?.isOptimized);
+
+  // Calculate optimization savings if applicable
+  const optimizationSavings = isOptimized ? 
+    allResults.reduce((sum, p) => sum + (p.result?.slabsSaved || 0), 0) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,7 +62,7 @@ export const ResultsView = ({
         
         <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
           <Sparkles className="w-8 h-8 text-teal-600" />
-          Optimized Results
+          {isOptimized ? 'Multi-Product Optimized Results' : 'Optimized Results'}
         </h2>
         
         {/* Summary Cards */}
@@ -75,6 +83,29 @@ export const ResultsView = ({
             <div className="text-sm text-emerald-600 font-medium mt-1">Average Efficiency</div>
           </Card>
         </div>
+
+        {/* Optimization Summary Card - Only show when optimized */}
+        {isOptimized && optimizationSavings > 0 && (
+          <Card className="p-6 mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Layers className="w-8 h-8 text-purple-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-900">Multi-Product Optimization Active</h3>
+                  <p className="text-sm text-purple-700 mt-1">
+                    By combining products efficiently, we saved {optimizationSavings.toFixed(1)} slabs!
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-purple-900">
+                  ${(optimizationSavings * 500).toFixed(0)}
+                </p>
+                <p className="text-xs text-purple-600 uppercase tracking-wider">Estimated Savings</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Slab Layout Visualization */}
         {settings.showVisualLayouts && (
@@ -98,6 +129,12 @@ export const ResultsView = ({
                   <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-teal-600" />
                     Layout Visualization: {product.customName || `Product ${productIndex + 1}`}
+                    {product.result?.isOptimized && (
+                      <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full flex items-center gap-1">
+                        <Share2 className="w-3 h-3" />
+                        Optimized with other products
+                      </span>
+                    )}
                   </h3>
                   
                   <div className="bg-gray-50 rounded-xl p-8">
@@ -157,8 +194,18 @@ export const ResultsView = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-teal-600">Slabs Needed:</span>
-                          <span className="font-bold text-teal-700">{product.result.totalSlabsNeeded}</span>
+                          <span className="font-bold text-teal-700">
+                            {product.result?.slabShare ? 
+                              product.result.slabShare.toFixed(2) : 
+                              product.result.totalSlabsNeeded}
+                          </span>
                         </div>
+                        {product.result?.sharedSlabs > 0 && (
+                          <div className="flex justify-between text-purple-600">
+                            <span className="text-sm">Shares slabs:</span>
+                            <span className="font-medium">{product.result.sharedSlabs} with other products</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -179,11 +226,19 @@ export const ResultsView = ({
                 <div className="flex flex-col gap-6">
                   {/* Product Header */}
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">
-                        {p.customName || `Product ${i + 1}`}
-                      </h3>
-                      <p className="text-gray-600 text-sm">{p.stone}</p>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          {p.customName || `Product ${i + 1}`}
+                        </h3>
+                        <p className="text-gray-600 text-sm">{p.stone}</p>
+                      </div>
+                      {p.result?.isOptimized && (
+                        <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full flex items-center gap-1">
+                          <Share2 className="w-3 h-3" />
+                          Optimized with other products
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -211,7 +266,11 @@ export const ResultsView = ({
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slabs</p>
-                      <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded || '-'}</p>
+                      <p className="font-semibold text-blue-600">
+                        {p.result?.slabShare ? 
+                          p.result.slabShare.toFixed(2) : 
+                          (p.result?.totalSlabsNeeded || '-')}
+                      </p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Efficiency</p>
@@ -228,10 +287,17 @@ export const ResultsView = ({
                     </div>
                   </div>
                   
-                  {/* Cost Breakdown - New addition */}
-                  <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
-                    <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
-                    <span>Fabrication: <span className="font-semibold text-orange-600">${(p.result?.fabricationCost || 0)?.toFixed(0)}</span></span>
+                  {/* Cost Breakdown - Enhanced with optimization info */}
+                  <div className="flex justify-between items-center text-sm text-gray-600 pt-2 border-t border-gray-100">
+                    <div className="flex gap-6">
+                      <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
+                      <span>Fabrication: <span className="font-semibold text-orange-600">${(p.result?.fabricationCost || 0)?.toFixed(0)}</span></span>
+                    </div>
+                    {p.result?.sharedSlabs > 0 && (
+                      <span className="text-purple-600 font-medium">
+                        Shares {p.result.sharedSlabs} slab{p.result.sharedSlabs > 1 ? 's' : ''} with other products
+                      </span>
+                    )}
                   </div>
                 </div>
                 
@@ -253,6 +319,11 @@ export const ResultsView = ({
             <div>
               <p className="text-teal-100 text-sm uppercase tracking-wider">Grand Total</p>
               <p className="text-4xl font-bold">${totalPrice}</p>
+              {isOptimized && optimizationSavings > 0 && (
+                <p className="text-teal-200 text-sm mt-1">
+                  Saved {optimizationSavings.toFixed(1)} slabs through optimization
+                </p>
+              )}
             </div>
             <div className="text-right">
               <p className="text-teal-100 text-sm">
