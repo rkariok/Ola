@@ -25,6 +25,17 @@ export const SettingsSidebar = ({ settings, onChange }) => {
           onChange={() => updateSetting('showVisualLayouts', !settings.showVisualLayouts)} 
         />
         
+        <div className="border-t pt-6">
+          <Toggle 
+            label="Multi-Product Optimization" 
+            checked={settings.multiProductOptimization} 
+            onChange={() => updateSetting('multiProductOptimization', !settings.multiProductOptimization)} 
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            Combine multiple products with the same stone type on single slabs to reduce waste
+          </p>
+        </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Kerf Width
