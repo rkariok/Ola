@@ -187,7 +187,7 @@ export default function StoneTopEstimator() {
 
   // PDF and Email handlers
   const handleGeneratePDF = () => {
-    generateQuotePDF(allResults, userInfo, stoneOptions);
+    generateQuotePDF(allResults, userInfo, stoneOptions, settings, optimizationData);
   };
 
   const handleSendEmail = async () => {
