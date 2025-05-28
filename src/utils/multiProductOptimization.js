@@ -262,6 +262,17 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
       const breakageBuffer = settings.breakageBuffer || 10;
       const costPerSlab = slabCost * (1 + breakageBuffer / 100);
       
+      // CRITICAL FIX: Use the actual optimized slab count
+      const actualSlabsUsed = result.totalSlabs;
+      const totalMaterialCost = costPerSlab * actualSlabsUsed;
+      
+      // Calculate total area for all pieces
+      const totalPiecesArea = result.placedPieces.reduce((sum, piece) => {
+        const w = piece.rotated ? piece.depth : piece.width;
+        const h = piece.rotated ? piece.width : piece.depth;
+        return sum + (w * h);
+      }, 0);
+      
       // Group pieces by original product
       const piecesByProduct = {};
       result.placedPieces.forEach(piece => {
@@ -269,14 +280,16 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         if (!piecesByProduct[key]) {
           piecesByProduct[key] = {
             pieces: [],
-            slabsUsed: new Set()
+            area: 0
           };
         }
         piecesByProduct[key].pieces.push(piece);
-        piecesByProduct[key].slabsUsed.add(piece.slabIndex);
+        const w = piece.rotated ? piece.depth : piece.width;
+        const h = piece.rotated ? piece.width : piece.depth;
+        piecesByProduct[key].area += (w * h);
       });
       
-      // Calculate costs for each product
+      // Calculate costs for each product based on area proportion
       Object.keys(piecesByProduct).forEach(productIndex => {
         const idx = parseInt(productIndex);
         const productData = piecesByProduct[productIndex];
@@ -290,37 +303,22 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         const area = w * d;
         const usableAreaSqft = (area / 144) * quantity;
         
-        // Calculate shared slab costs
-        let materialCost = 0;
-        productData.slabsUsed.forEach(slabIndex => {
-          const slab = result.slabs[slabIndex];
-          if (!slab) return;
-          
-          const totalPiecesInSlab = slab.pieces.length;
-          const productPiecesInSlab = slab.pieces.filter(p => p.productIndex === idx).length;
-          
-          // Proportional cost based on area used
-          const productAreaInSlab = productPiecesInSlab * w * d;
-          const totalAreaInSlab = slab.pieces.reduce((sum, p) => {
-            const pw = p.rotated ? p.depth : p.width;
-            const ph = p.rotated ? p.width : p.depth;
-            return sum + pw * ph;
-          }, 0);
-          
-          const proportion = totalAreaInSlab > 0 ? productAreaInSlab / totalAreaInSlab : 0;
-          materialCost += costPerSlab * proportion;
-        });
+        // Calculate this product's share of material cost based on area used
+        const areaRatio = productData.area / totalPiecesArea;
+        const materialCost = totalMaterialCost * areaRatio;
         
         const fabricationCost = usableAreaSqft * fabCost;
         const rawCost = materialCost + fabricationCost;
         const finalPrice = rawCost * markup;
         
-        // Calculate effective efficiency
-        const effectiveSlabs = costPerSlab > 0 ? materialCost / costPerSlab : 0;
+        // Calculate effective slabs (fractional based on area used)
+        const effectiveSlabs = actualSlabsUsed * areaRatio;
+        
+        // Calculate efficiency based on actual optimization
         const slabWidth = parseFloat(stone["Slab Width"]) || 126;
         const slabHeight = parseFloat(stone["Slab Height"]) || 63;
         const theoreticalArea = effectiveSlabs * slabWidth * slabHeight;
-        const efficiency = theoreticalArea > 0 ? (productData.pieces.length * w * d / theoreticalArea) * 100 : 0;
+        const efficiency = theoreticalArea > 0 ? (productData.area / theoreticalArea) * 100 : 0;
         
         optimizedProducts[idx].result = {
           usableAreaSqft,
@@ -330,10 +328,10 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
           fabricationCost,
           rawCost,
           finalPrice,
-          topsPerSlab: productData.slabsUsed.size > 0 ? 
-            Math.floor(productData.pieces.length / productData.slabsUsed.size) : 0,
+          topsPerSlab: quantity / effectiveSlabs,
           multiProductOptimized: true,
-          sharedSlabs: Array.from(productData.slabsUsed),
+          actualTotalSlabs: actualSlabsUsed,
+          areaRatio: areaRatio,
           placementDetails: productData.pieces
         };
       });
