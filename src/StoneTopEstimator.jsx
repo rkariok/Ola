@@ -10,6 +10,7 @@ import { SettingsSidebar } from './components/SettingsSidebar';
 import { Button } from './components/ui/Button';
 import { Plus, Calculator } from './components/icons/Icons';
 import { calculateProductResults } from './utils/calculations';
+import { optimizeMultipleProducts } from './utils/multiProductOptimization';
 import { generateQuotePDF } from './utils/pdfGenerator';
 import { sendQuoteEmail } from './utils/emailService';
 import { analyzeDrawingWithAI, handleClaudeMultiplePiecesExtraction } from './utils/aiDrawingAnalysis';
@@ -40,12 +41,13 @@ export default function StoneTopEstimator() {
   const [emailStatus, setEmailStatus] = useState('');
   const [savedQuotes, setSavedQuotes] = useState([]);
   
-  // Settings
+  // Settings - Added optimizeAcrossProducts
   const [settings, setSettings] = useState({
     includeKerf: true,
     kerfWidth: 0.125,
     breakageBuffer: 10,
-    showVisualLayouts: true
+    showVisualLayouts: true,
+    optimizeAcrossProducts: false
   });
 
   // Load saved quotes and stone data on mount
@@ -124,11 +126,19 @@ export default function StoneTopEstimator() {
     }
   };
 
-  // Calculate all products
+  // Calculate all products - Modified to use optimization when enabled
   const calculateAll = () => {
-    const results = products.map((product) => 
-      calculateProductResults(product, stoneOptions, settings)
-    );
+    let results;
+    
+    if (settings.optimizeAcrossProducts) {
+      // Use multi-product optimization
+      results = optimizeMultipleProducts(products, stoneOptions, settings);
+    } else {
+      // Use individual calculation
+      results = products.map((product) => 
+        calculateProductResults(product, stoneOptions, settings)
+      );
+    }
     
     setAllResults(results);
     setShowResults(true);
