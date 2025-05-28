@@ -1,6 +1,6 @@
 // Save this as: components/SlabLayoutVisualization.jsx
 import { useState, useEffect } from 'react';
-import { Package } from '../icons/Icons';
+import { Package } from './icons/Icons';
 
 export const SlabLayoutVisualization = ({ pieces, slabWidth, slabHeight, maxPiecesPerSlab, includeKerf, kerfWidth, showMaxLayout = false }) => {
   const [isAnimating, setIsAnimating] = useState(true);
