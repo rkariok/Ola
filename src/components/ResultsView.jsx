@@ -6,6 +6,8 @@ import {
   Info, CheckCircle, FileText, Mail 
 } from './icons/Icons';
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
+import { MultiProductSlabVisualization } from './MultiProductSlabVisualization';
+import { optimizeMultiProductLayout } from '../utils/multiProductOptimization';
 
 export const ResultsView = ({ 
   allResults, 
@@ -75,6 +77,70 @@ export const ResultsView = ({
             <div className="text-sm text-emerald-600 font-medium mt-1">Average Efficiency</div>
           </Card>
         </div>
+
+        {/* Multi-Product Optimization Visualization */}
+        {settings.multiProductOptimization && settings.showVisualLayouts && (
+          <div className="mb-8">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                Multi-Product Optimization Results
+              </h3>
+              
+              {(() => {
+                // Recalculate optimization for visualization
+                const optimizationResults = optimizeMultiProductLayout(
+                  allResults.filter(r => r.result), 
+                  stoneOptions, 
+                  settings
+                );
+                
+                return Object.entries(optimizationResults).map(([stoneType, result]) => {
+                  if (result.error || !result.slabs || result.slabs.length === 0) return null;
+                  
+                  const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+                  if (!stone) return null;
+                  
+                  const slabWidth = parseFloat(stone["Slab Width"]);
+                  const slabHeight = parseFloat(stone["Slab Height"]);
+                  
+                  return (
+                    <div key={stoneType} className="mb-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-4">
+                        {stoneType} - {result.slabs.length} slab{result.slabs.length !== 1 ? 's' : ''}
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {result.slabs.map((slab, slabIndex) => (
+                          <div key={slabIndex} className="bg-gray-50 rounded-xl p-6">
+                            <h5 className="text-sm font-medium text-gray-600 mb-4 text-center">
+                              Slab #{slabIndex + 1}
+                            </h5>
+                            <MultiProductSlabVisualization
+                              slabData={slab}
+                              slabWidth={slabWidth}
+                              slabHeight={slabHeight}
+                              allProducts={allResults}
+                              settings={settings}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <p className="text-sm text-purple-800">
+                          <span className="font-semibold">Optimization Summary:</span> Combined {result.placedPieces.length} pieces 
+                          across {result.slabs.length} slab{result.slabs.length !== 1 ? 's' : ''} with an average efficiency 
+                          of <span className="font-bold">{result.averageEfficiency.toFixed(1)}%</span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </Card>
+          </div>
+        )}
 
         {/* Slab Layout Visualization */}
         {settings.showVisualLayouts && (
@@ -232,6 +298,9 @@ export const ResultsView = ({
                   <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
                     <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
                     <span>Fabrication: <span className="font-semibold text-orange-600">${(p.result?.fabricationCost || 0)?.toFixed(0)}</span></span>
+                    {p.result?.multiProductOptimized && (
+                      <span className="text-purple-600 font-medium">✨ Optimized</span>
+                    )}
                   </div>
                 </div>
                 
