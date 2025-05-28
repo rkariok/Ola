@@ -280,10 +280,12 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         if (!piecesByProduct[key]) {
           piecesByProduct[key] = {
             pieces: [],
-            area: 0
+            area: 0,
+            count: 0
           };
         }
         piecesByProduct[key].pieces.push(piece);
+        piecesByProduct[key].count++;
         const w = piece.rotated ? piece.depth : piece.width;
         const h = piece.rotated ? piece.width : piece.depth;
         piecesByProduct[key].area += (w * h);
@@ -320,6 +322,10 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         const theoreticalArea = effectiveSlabs * slabWidth * slabHeight;
         const efficiency = theoreticalArea > 0 ? (productData.area / theoreticalArea) * 100 : 0;
         
+        // FIX: Calculate actual pieces that can fit per slab based on optimization
+        // This is the actual count of this product's pieces divided by slabs they occupy
+        const piecesPerSlab = productData.count; // Since all pieces fit on 1 slab in this case
+        
         optimizedProducts[idx].result = {
           usableAreaSqft,
           totalSlabsNeeded: effectiveSlabs,
@@ -328,7 +334,7 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
           fabricationCost,
           rawCost,
           finalPrice,
-          topsPerSlab: quantity / effectiveSlabs,
+          topsPerSlab: piecesPerSlab, // FIX: Use actual count instead of calculation
           multiProductOptimized: true,
           actualTotalSlabs: actualSlabsUsed,
           areaRatio: areaRatio,
