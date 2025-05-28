@@ -1,23 +1,68 @@
-// Save this as: utils/pdfGenerator.js
+// Save this as: src/utils/pdfGenerator.js
 
-export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
-  console.log('generateQuotePDF function called!');
+export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, optimizationData) => {
+  console.log('generateQuotePDF function called!', { settings, optimizationData });
   
   if (!allResults || allResults.length === 0) {
     alert("Please calculate estimates first");
     return;
   }
 
-  const totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
-  const totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
-  const avgEfficiency = allResults.length > 0 ? 
-    (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+  // Calculate totals based on optimization mode
+  let totalPrice, totalSlabs, avgEfficiency;
+  
+  if (settings?.multiProductOptimization && optimizationData) {
+    // For multi-product optimization, use the actual optimized values
+    totalSlabs = Object.values(optimizationData).reduce((sum, result) => {
+      return sum + (result.totalSlabs || 0);
+    }, 0);
+    
+    // Calculate total price based on optimized slabs
+    totalPrice = 0;
+    Object.entries(optimizationData).forEach(([stoneType, result]) => {
+      if (result.error || !result.totalSlabs) return;
+      
+      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      if (!stone) return;
+      
+      const slabCost = parseFloat(stone["Slab Cost"]) || 0;
+      const markup = parseFloat(stone["Mark Up"]) || 1;
+      const breakageBuffer = settings.breakageBuffer || 10;
+      
+      // Material cost for optimized slabs
+      const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
+      
+      // Add fabrication costs from all products
+      const fabricationCost = allResults
+        .filter(p => p.stone === stoneType && p.result)
+        .reduce((sum, p) => sum + (p.result.fabricationCost || 0), 0);
+      
+      totalPrice += materialCost + fabricationCost;
+    });
+    
+    totalPrice = totalPrice.toFixed(2);
+    
+    // Calculate average efficiency from optimization
+    const allEfficiencies = Object.values(optimizationData)
+      .filter(r => r.averageEfficiency)
+      .map(r => r.averageEfficiency);
+    
+    avgEfficiency = allEfficiencies.length > 0 
+      ? (allEfficiencies.reduce((sum, e) => sum + e, 0) / allEfficiencies.length).toFixed(1)
+      : '0';
+  } else {
+    // Standard calculation
+    totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
+    totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
+    avgEfficiency = allResults.length > 0 ? 
+      (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+  }
 
   const printWindow = window.open('', '_blank', 'width=900,height=800');
   
   if (!printWindow) {
     console.log('Popup blocked, trying alternative method...');
-    showPrintView(allResults, userInfo, stoneOptions);
+    showPrintView(allResults, userInfo, stoneOptions, settings, optimizationData);
     return;
   }
 
@@ -304,6 +349,11 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
           color: #991b1b;
         }
         
+        .optimized-badge {
+          color: #7c3aed;
+          font-weight: 600;
+        }
+        
         /* Footer Section */
         .footer {
           margin-top: 60px;
@@ -426,6 +476,14 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
           </div>
         </div>
         
+        ${settings?.multiProductOptimization && optimizationData ? `
+          <div style="background: #f3e8ff; border: 1px solid #c084fc; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
+            <p style="color: #7c3aed; font-weight: 600; margin: 0;">
+              ✨ Multi-Product Optimization Applied - ${totalSlabs} Optimized Slab${totalSlabs !== 1 ? 's' : ''}
+            </p>
+          </div>
+        ` : ''}
+        
         <!-- Products -->
         <div class="products-section">
           <div class="section-header">
@@ -436,6 +494,14 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
           ${allResults.map((p, i) => {
             const effClass = p.result?.efficiency > 80 ? 'efficiency-high' : 
                             p.result?.efficiency > 60 ? 'efficiency-medium' : 'efficiency-low';
+            const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
+            const markup = parseFloat(stone?.["Mark Up"]) || 1;
+            
+            // Fix tops per slab display
+            const topsPerSlab = p.result?.topsPerSlab ? 
+              (Number.isInteger(p.result.topsPerSlab) ? p.result.topsPerSlab : p.result.topsPerSlab.toFixed(1)) 
+              : '-';
+            
             return `
               <div class="product-card">
                 <div class="product-header">
@@ -465,11 +531,11 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
                   </div>
                   <div class="detail-item">
                     <div class="detail-label">Slabs</div>
-                    <div class="detail-value">${p.result?.totalSlabsNeeded || '0'}</div>
+                    <div class="detail-value">${p.result?.totalSlabsNeeded?.toFixed(1) || '0'}</div>
                   </div>
                   <div class="detail-item">
                     <div class="detail-label">Per Slab</div>
-                    <div class="detail-value">${p.result?.topsPerSlab || '0'} pieces</div>
+                    <div class="detail-value">${topsPerSlab} pieces</div>
                   </div>
                   <div class="detail-item">
                     <div class="detail-label">Efficiency</div>
@@ -477,8 +543,14 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
                       <span class="efficiency-badge ${effClass}">
                         ${p.result?.efficiency?.toFixed(0) || '0'}%
                       </span>
+                      ${p.result?.multiProductOptimized ? '<span class="optimized-badge"> ✨ Optimized</span>' : ''}
                     </div>
                   </div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: right; font-size: 13px; color: #6b7280;">
+                  Material: <span style="color: #2563eb; font-weight: 600;">$${((p.result?.materialCost || 0) * markup).toFixed(0)}</span>
+                  &nbsp;&nbsp;•&nbsp;&nbsp;
+                  Fabrication: <span style="color: #ea580c; font-weight: 600;">$${(p.result?.fabricationCost || 0).toFixed(0)}</span>
                 </div>
                 ${p.note ? `
                   <div style="margin-top: 12px; padding: 12px; background: #fef3c7; border-radius: 8px; font-size: 13px; color: #92400e;">
@@ -512,7 +584,11 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
             </div>
           </div>
           
-          <p class="tagline">Generated by AIC Surfaces Stone Estimator • Powered by AI Optimization</p>
+          <p class="tagline">
+            Generated by AIC Surfaces Stone Estimator 
+            ${settings?.multiProductOptimization ? '• Multi-Product Optimization Enabled' : ''} 
+            • Powered by AI
+          </p>
         </div>
       </div>
       
@@ -540,9 +616,39 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions) => {
   printWindow.focus();
 };
 
-const showPrintView = (allResults, userInfo, stoneOptions) => {
-  const totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
-  const totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
+const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizationData) => {
+  // Calculate totals based on optimization mode
+  let totalPrice, totalSlabs;
+  
+  if (settings?.multiProductOptimization && optimizationData) {
+    totalSlabs = Object.values(optimizationData).reduce((sum, result) => {
+      return sum + (result.totalSlabs || 0);
+    }, 0);
+    
+    totalPrice = 0;
+    Object.entries(optimizationData).forEach(([stoneType, result]) => {
+      if (result.error || !result.totalSlabs) return;
+      
+      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      if (!stone) return;
+      
+      const slabCost = parseFloat(stone["Slab Cost"]) || 0;
+      const markup = parseFloat(stone["Mark Up"]) || 1;
+      const breakageBuffer = settings.breakageBuffer || 10;
+      
+      const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
+      const fabricationCost = allResults
+        .filter(p => p.stone === stoneType && p.result)
+        .reduce((sum, p) => sum + (p.result.fabricationCost || 0), 0);
+      
+      totalPrice += materialCost + fabricationCost;
+    });
+    
+    totalPrice = totalPrice.toFixed(2);
+  } else {
+    totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
+    totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
+  }
   
   const originalContent = document.body.innerHTML;
   
@@ -552,37 +658,4 @@ const showPrintView = (allResults, userInfo, stoneOptions) => {
       <p style="text-align: center; color: #6b7280;">Customer: ${userInfo.name || 'N/A'} | Date: ${new Date().toLocaleDateString()}</p>
       
       <div style="margin: 40px 0; padding: 20px; background: #f0fdfa; border-radius: 12px; text-align: center;">
-        <h2 style="color: #0f766e; margin-bottom: 10px;">Total: $${totalPrice}</h2>
-        <p style="color: #14b8a6;">Slabs Required: ${totalSlabs}</p>
-      </div>
-      
-      <div style="text-align: center; margin-top: 40px;">
-        <button onclick="window.print()" style="
-          padding: 16px 40px;
-          background: #0f766e;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 18px;
-          cursor: pointer;
-          margin-right: 10px;
-        ">
-          Print / Save as PDF
-        </button>
-        <button onclick="location.reload()" style="
-          padding: 16px 40px;
-          background: #6b7280;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 18px;
-          cursor: pointer;
-        ">
-          Go Back
-        </button>
-      </div>
-    </div>
-  `;
-  
-  window.print();
-};
+        <h2 style="
