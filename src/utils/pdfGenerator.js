@@ -658,4 +658,38 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       <p style="text-align: center; color: #6b7280;">Customer: ${userInfo.name || 'N/A'} | Date: ${new Date().toLocaleDateString()}</p>
       
       <div style="margin: 40px 0; padding: 20px; background: #f0fdfa; border-radius: 12px; text-align: center;">
-        <h2 style="
+        <h2 style="color: #0f766e; margin-bottom: 10px;">Total: $${totalPrice}</h2>
+        <p style="color: #14b8a6;">Slabs Required: ${totalSlabs}</p>
+        ${settings?.multiProductOptimization ? '<p style="color: #7c3aed; font-weight: 600;">✨ Multi-Product Optimization Applied</p>' : ''}
+      </div>
+      
+      <div style="text-align: center; margin-top: 40px;">
+        <button onclick="window.print()" style="
+          padding: 16px 40px;
+          background: #0f766e;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 18px;
+          cursor: pointer;
+          margin-right: 10px;
+        ">
+          Print / Save as PDF
+        </button>
+        <button onclick="location.reload()" style="
+          padding: 16px 40px;
+          background: #6b7280;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 18px;
+          cursor: pointer;
+        ">
+          Go Back
+        </button>
+      </div>
+    </div>
+  `;
+  
+  window.print();
+};
