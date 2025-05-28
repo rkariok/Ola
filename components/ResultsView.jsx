@@ -6,6 +6,8 @@ import {
   Info, CheckCircle, FileText, Mail 
 } from './icons/Icons';
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
+import { MultiProductSlabVisualization } from './MultiProductSlabVisualization';
+import { optimizeMultiProductLayout } from '../utils/multiProductOptimization';
 
 export const ResultsView = ({ 
   allResults, 
@@ -75,6 +77,70 @@ export const ResultsView = ({
             <div className="text-sm text-emerald-600 font-medium mt-1">Average Efficiency</div>
           </Card>
         </div>
+
+        {/* Multi-Product Optimization Visualization */}
+        {settings.multiProductOptimization && settings.showVisualLayouts && (
+          <div className="mb-8">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                Multi-Product Optimization Results
+              </h3>
+              
+              {(() => {
+                // Recalculate optimization for visualization
+                const optimizationResults = optimizeMultiProductLayout(
+                  allResults.filter(r => r.result), 
+                  stoneOptions, 
+                  settings
+                );
+                
+                return Object.entries(optimizationResults).map(([stoneType, result]) => {
+                  if (result.error || !result.slabs || result.slabs.length === 0) return null;
+                  
+                  const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+                  if (!stone) return null;
+                  
+                  const slabWidth = parseFloat(stone["Slab Width"]);
+                  const slabHeight = parseFloat(stone["Slab Height"]);
+                  
+                  return (
+                    <div key={stoneType} className="mb-6">
+                      <h4 className="text-md font-medium text-gray-700 mb-4">
+                        {stoneType} - {result.slabs.length} slab{result.slabs.length !== 1 ? 's' : ''}
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {result.slabs.map((slab, slabIndex) => (
+                          <div key={slabIndex} className="bg-gray-50 rounded-xl p-6">
+                            <h5 className="text-sm font-medium text-gray-600 mb-4 text-center">
+                              Slab #{slabIndex + 1}
+                            </h5>
+                            <MultiProductSlabVisualization
+                              slabData={slab}
+                              slabWidth={slabWidth}
+                              slabHeight={slabHeight}
+                              allProducts={allResults}
+                              settings={settings}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <p className="text-sm text-purple-800">
+                          <span className="font-semibold">Optimization Summary:</span> Combined {result.placedPieces.length} pieces 
+                          across {result.slabs.length} slab{result.slabs.length !== 1 ? 's' : ''} with an average efficiency 
+                          of <span className="font-bold">{result.averageEfficiency.toFixed(1)}%</span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </Card>
+          </div>
+        )}
 
         {/* Slab Layout Visualization */}
         {settings.showVisualLayouts && (
@@ -168,7 +234,7 @@ export const ResultsView = ({
           </div>
         )}
 
-        {/* Results Cards */}
+        {/* Results Cards - WITH IMPROVED SPACING */}
         <div className="space-y-4 mb-8">
           {allResults.map((p, i) => {
             const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
@@ -176,40 +242,44 @@ export const ResultsView = ({
             
             return (
               <Card key={i} className="p-8 hover:shadow-md transition-shadow">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                  <div className="flex-1 min-w-[200px]">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                      {p.customName || `Product ${i + 1}`}
-                    </h3>
-                    <p className="text-gray-600 text-sm">{p.stone}</p>
+                <div className="flex flex-col gap-6">
+                  {/* Product Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {p.customName || `Product ${i + 1}`}
+                      </h3>
+                      <p className="text-gray-600 text-sm">{p.stone}</p>
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-3 flex-1">
-                    <div>
+                  {/* Product Details Grid - Better spacing */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-6">
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Size</p>
                       <p className="font-semibold text-gray-900">{p.width}×{p.depth}"</p>
                     </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Qty</p>
                       <p className="font-semibold text-gray-900">{p.quantity}</p>
                     </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Edge</p>
-                      <p className="font-semibold text-gray-900 text-sm">{p.edgeDetail}</p>
+                      <p className="font-semibold text-gray-900">{p.edgeDetail}</p>
                     </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Area</p>
                       <p className="font-semibold text-gray-900">{p.result?.usableAreaSqft?.toFixed(1)} ft²</p>
                     </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Per Slab</p>
                       <p className="font-semibold text-purple-600">{p.result?.topsPerSlab || '-'}</p>
                     </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slabs</p>
                       <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded || '-'}</p>
                     </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Efficiency</p>
                       <p className={`font-bold ${
                         (p.result?.efficiency || 0) > 80 ? 'text-green-600' : 
@@ -218,18 +288,19 @@ export const ResultsView = ({
                         {p.result?.efficiency?.toFixed(0) || '0'}%
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Material</p>
-                      <p className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0) || '0'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Fab</p>
-                      <p className="font-semibold text-orange-600">${(p.result?.fabricationCost || 0)?.toFixed(0) || '0'}</p>
-                    </div>
-                    <div>
+                    <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Total</p>
-                      <p className="font-bold text-green-600 text-lg">${p.result?.finalPrice?.toFixed(0) || '0'}</p>
+                      <p className="font-bold text-green-600 text-xl">${p.result?.finalPrice?.toFixed(0) || '0'}</p>
                     </div>
+                  </div>
+                  
+                  {/* Cost Breakdown - New addition */}
+                  <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
+                    <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
+                    <span>Fabrication: <span className="font-semibold text-orange-600">${(p.result?.fabricationCost || 0)?.toFixed(0)}</span></span>
+                    {p.result?.multiProductOptimized && (
+                      <span className="text-purple-600 font-medium">✨ Optimized</span>
+                    )}
                   </div>
                 </div>
                 
