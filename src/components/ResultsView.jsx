@@ -1,4 +1,4 @@
-// Save this as: components/ResultsView.jsx
+// Save this as: src/components/ResultsView.jsx
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { 
@@ -11,6 +11,7 @@ import { optimizeMultiProductLayout } from '../utils/multiProductOptimization';
 
 export const ResultsView = ({ 
   allResults, 
+  optimizationData,
   stoneOptions, 
   userInfo, 
   settings,
@@ -20,10 +21,55 @@ export const ResultsView = ({
   sendingEmail,
   emailStatus 
 }) => {
-  const totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
-  const totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
-  const avgEfficiency = allResults.length > 0 ? 
-    (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+  // Calculate totals based on optimization mode
+  let totalPrice, totalSlabs, avgEfficiency;
+  
+  if (settings.multiProductOptimization && optimizationData) {
+    // For multi-product optimization, use the actual optimized values
+    totalSlabs = Object.values(optimizationData).reduce((sum, result) => {
+      return sum + (result.totalSlabs || 0);
+    }, 0);
+    
+    // Calculate total price based on optimized slabs
+    totalPrice = 0;
+    Object.entries(optimizationData).forEach(([stoneType, result]) => {
+      if (result.error || !result.totalSlabs) return;
+      
+      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      if (!stone) return;
+      
+      const slabCost = parseFloat(stone["Slab Cost"]) || 0;
+      const markup = parseFloat(stone["Mark Up"]) || 1;
+      const breakageBuffer = settings.breakageBuffer || 10;
+      
+      // Material cost for optimized slabs
+      const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
+      
+      // Add fabrication costs from all products
+      const fabricationCost = allResults
+        .filter(p => p.stone === stoneType && p.result)
+        .reduce((sum, p) => sum + (p.result.fabricationCost || 0), 0);
+      
+      totalPrice += materialCost + fabricationCost;
+    });
+    
+    totalPrice = totalPrice.toFixed(2);
+    
+    // Calculate average efficiency from optimization
+    const allEfficiencies = Object.values(optimizationData)
+      .filter(r => r.averageEfficiency)
+      .map(r => r.averageEfficiency);
+    
+    avgEfficiency = allEfficiencies.length > 0 
+      ? (allEfficiencies.reduce((sum, e) => sum + e, 0) / allEfficiencies.length).toFixed(1)
+      : '0';
+  } else {
+    // Standard calculation (existing code)
+    totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
+    totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
+    avgEfficiency = allResults.length > 0 ? 
+      (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,8 +134,8 @@ export const ResultsView = ({
               </h3>
               
               {(() => {
-                // Recalculate optimization for visualization
-                const optimizationResults = optimizeMultiProductLayout(
+                // Use the passed optimization data instead of recalculating
+                const optimizationResults = optimizationData || optimizeMultiProductLayout(
                   allResults.filter(r => r.result), 
                   stoneOptions, 
                   settings
@@ -277,7 +323,7 @@ export const ResultsView = ({
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slabs</p>
-                      <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded || '-'}</p>
+                      <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded?.toFixed(1) || '-'}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Efficiency</p>
@@ -325,12 +371,18 @@ export const ResultsView = ({
             </div>
             <div className="text-right">
               <p className="text-teal-100 text-sm">
-                Material: ${allResults.reduce((sum, p) => {
-                  const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
-                  const markup = parseFloat(stone?.["Mark Up"]) || 1;
-                  return sum + ((p.result?.materialCost || 0) * markup);
-                }, 0).toFixed(0)} • 
-                Fabrication: ${allResults.reduce((sum, p) => sum + (p.result?.fabricationCost || 0), 0).toFixed(0)}
+                {settings.multiProductOptimization && optimizationData ? (
+                  <>Optimized pricing for {totalSlabs} slab{totalSlabs !== 1 ? 's' : ''}</>
+                ) : (
+                  <>
+                    Material: ${allResults.reduce((sum, p) => {
+                      const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
+                      const markup = parseFloat(stone?.["Mark Up"]) || 1;
+                      return sum + ((p.result?.materialCost || 0) * markup);
+                    }, 0).toFixed(0)} • 
+                    Fabrication: ${allResults.reduce((sum, p) => sum + (p.result?.fabricationCost || 0), 0).toFixed(0)}
+                  </>
+                )}
               </p>
             </div>
           </div>
