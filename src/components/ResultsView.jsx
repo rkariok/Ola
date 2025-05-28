@@ -188,8 +188,8 @@ export const ResultsView = ({
           </div>
         )}
 
-        {/* Slab Layout Visualization */}
-        {settings.showVisualLayouts && (
+        {/* Slab Layout Visualization - Only show when NOT using multi-product optimization */}
+        {settings.showVisualLayouts && !settings.multiProductOptimization && (
           <div className="space-y-6 mb-8">
             {allResults.map((product, productIndex) => {
               if (!product.result) return null;
