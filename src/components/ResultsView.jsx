@@ -20,10 +20,55 @@ export const ResultsView = ({
   sendingEmail,
   emailStatus 
 }) => {
-  const totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
-  const totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
-  const avgEfficiency = allResults.length > 0 ? 
-    (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+  // Calculate totals based on optimization mode (same logic as PDF)
+  let totalPrice, totalSlabs, avgEfficiency;
+  
+  if (settings?.multiProductOptimization && optimizationData) {
+    // For multi-product optimization, use the actual optimized values
+    totalSlabs = Object.values(optimizationData).reduce((sum, result) => {
+      return sum + (result.totalSlabs || 0);
+    }, 0);
+    
+    // Calculate total price based on optimized slabs
+    totalPrice = 0;
+    Object.entries(optimizationData).forEach(([stoneType, result]) => {
+      if (result.error || !result.totalSlabs) return;
+      
+      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      if (!stone) return;
+      
+      const slabCost = parseFloat(stone["Slab Cost"]) || 0;
+      const markup = parseFloat(stone["Mark Up"]) || 1;
+      const breakageBuffer = settings.breakageBuffer || 10;
+      
+      // Material cost for optimized slabs
+      const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
+      
+      // Add fabrication costs from all products with markup
+      const fabricationCost = allResults
+        .filter(p => p.stone === stoneType && p.result)
+        .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
+      
+      totalPrice += materialCost + fabricationCost;
+    });
+    
+    totalPrice = totalPrice.toFixed(2);
+    
+    // Calculate average efficiency from optimization
+    const allEfficiencies = Object.values(optimizationData)
+      .filter(r => r.averageEfficiency)
+      .map(r => r.averageEfficiency);
+    
+    avgEfficiency = allEfficiencies.length > 0 
+      ? (allEfficiencies.reduce((sum, e) => sum + e, 0) / allEfficiencies.length).toFixed(1)
+      : '0';
+  } else {
+    // Standard calculation
+    totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
+    totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
+    avgEfficiency = allResults.length > 0 ? 
+      (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +109,7 @@ export const ResultsView = ({
           <Card className="p-6 text-center bg-gradient-to-br from-teal-50 to-white border-teal-200">
             <DollarSign className="w-8 h-8 text-teal-600 mx-auto mb-2" />
             <div className="text-3xl font-bold text-teal-700">${totalPrice}</div>
-            <div className="text-sm text-teal-600 font-medium mt-1">Total Investment</div>
+            <div className="text-sm text-teal-600 font-medium mt-1">Total Price</div>
           </Card>
           <Card className="p-6 text-center bg-gradient-to-br from-blue-50 to-white border-blue-200">
             <Package className="w-8 h-8 text-blue-600 mx-auto mb-2" />
