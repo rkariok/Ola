@@ -82,9 +82,14 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const totalUsedArea = pieces.reduce((sum, p) => sum + p.width * p.depth, 0);
   const efficiency = totalSlabArea > 0 ? (totalUsedArea / totalSlabArea) * 100 : 0;
   
+  // Calculate costs WITHOUT markup first
   const materialCost = (slabCost * totalSlabsNeeded) * (1 + settings.breakageBuffer/100);
   const fabricationCost = usableAreaSqft * fabCost;
+  
+  // Raw cost is the sum of material and fabrication costs (no markup yet)
   const rawCost = materialCost + fabricationCost;
+  
+  // Final price applies markup to the entire raw cost
   const finalPrice = rawCost * markup;
 
   return {
@@ -93,10 +98,10 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
       usableAreaSqft,
       totalSlabsNeeded,
       efficiency,
-      materialCost,
-      fabricationCost,
-      rawCost,
-      finalPrice,
+      materialCost,      // This is the base material cost (no markup)
+      fabricationCost,   // This is the base fabrication cost (no markup)
+      rawCost,          // This is material + fabrication (no markup)
+      finalPrice,       // This is the final price with markup applied to everything
       topsPerSlab: maxPiecesPerSlab
     }
   };
