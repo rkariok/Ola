@@ -1,3 +1,4 @@
+// api/claude-extract-dimensions.js
 import Anthropic from '@anthropic-ai/sdk';
 
 // Initialize Claude
@@ -31,7 +32,7 @@ export default async function handler(req, res) {
   try {
     console.log('Processing Claude extraction request...');
 
-    // Get the uploaded image data and any hints
+    // Get the uploaded image data (already preprocessed in browser!)
     const { image, hints, retryWithContext } = req.body;
     
     if (!image) {
@@ -41,8 +42,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Enhanced prompt with retry context and hints
-    let analysisPrompt = `You are an expert stone fabrication analyst. Analyze this technical drawing and extract ALL stone pieces with their dimensions.
+    // Enhanced prompt with better instructions
+    const analysisPrompt = `You are an expert stone fabrication analyst. Analyze this technical drawing and extract ALL stone pieces with their dimensions.
 
 CRITICAL INSTRUCTIONS:
 1. Find EVERY piece that needs to be cut from stone - DO NOT MISS ANY PIECES
@@ -128,7 +129,7 @@ Analyze the drawing now and return ONLY the JSON response:`;
     // Call Claude API
     const response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 3000, // Increased for more thorough analysis
+      max_tokens: 3000,
       temperature: 0.1,
       messages: [{
         role: 'user',
@@ -178,8 +179,7 @@ Analyze the drawing now and return ONLY the JSON response:`;
       // Add metadata
       extractedData.data.extractedAt = new Date().toISOString();
       extractedData.data.aiModel = 'claude-3-5-sonnet';
-      extractedData.data.version = '2.1';
-      extractedData.data.analysisMode = retryWithContext ? 'enhanced' : 'standard';
+      extractedData.data.preprocessed = true;
     }
 
     console.log('Sending successful response');
