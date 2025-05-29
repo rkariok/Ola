@@ -32,10 +32,10 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       // Material cost for optimized slabs
       const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
       
-      // Add fabrication costs from all products
+      // Add fabrication costs from all products WITH MARKUP
       const fabricationCost = allResults
         .filter(p => p.stone === stoneType && p.result)
-        .reduce((sum, p) => sum + (p.result.fabricationCost || 0), 0);
+        .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
       
       totalPrice += materialCost + fabricationCost;
     });
@@ -464,7 +464,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
         <div class="summary-cards">
           <div class="summary-card primary">
             <div class="value">$${totalPrice}</div>
-            <div class="label">Total Investment</div>
+            <div class="label">Total Price</div>
           </div>
           <div class="summary-card">
             <div class="value">${totalSlabs}</div>
@@ -550,7 +550,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
                 <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; text-align: right; font-size: 13px; color: #6b7280;">
                   Material: <span style="color: #2563eb; font-weight: 600;">$${((p.result?.materialCost || 0) * markup).toFixed(0)}</span>
                   &nbsp;&nbsp;•&nbsp;&nbsp;
-                  Fabrication: <span style="color: #ea580c; font-weight: 600;">$${(p.result?.fabricationCost || 0).toFixed(0)}</span>
+                  Fabrication: <span style="color: #ea580c; font-weight: 600;">$${((p.result?.fabricationCost || 0) * markup).toFixed(0)}</span>
                 </div>
                 ${p.note ? `
                   <div style="margin-top: 12px; padding: 12px; background: #fef3c7; border-radius: 8px; font-size: 13px; color: #92400e;">
@@ -639,7 +639,7 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
       const fabricationCost = allResults
         .filter(p => p.stone === stoneType && p.result)
-        .reduce((sum, p) => sum + (p.result.fabricationCost || 0), 0);
+        .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
       
       totalPrice += materialCost + fabricationCost;
     });
