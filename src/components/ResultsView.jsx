@@ -6,12 +6,14 @@ import {
   Info, CheckCircle, FileText, Mail 
 } from './icons/Icons';
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
+import { MultiProductSlabVisualization } from './MultiProductSlabVisualization';
 
 export const ResultsView = ({ 
   allResults, 
   stoneOptions, 
   userInfo, 
   settings,
+  optimizationData,
   onBack, 
   onGeneratePDF, 
   onSendEmail,
@@ -76,95 +78,167 @@ export const ResultsView = ({
           </Card>
         </div>
 
+        {/* Multi-Product Optimization Alert */}
+        {settings?.multiProductOptimization && optimizationData && (
+          <Card className="p-4 mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-purple-600" />
+              <div>
+                <h3 className="font-semibold text-purple-900">Multi-Product Optimization Applied</h3>
+                <p className="text-sm text-purple-700 mt-1">
+                  Products with the same stone type have been optimized together to minimize waste and reduce total slabs needed.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Slab Layout Visualization */}
         {settings.showVisualLayouts && (
           <div className="space-y-6 mb-8">
-            {allResults.map((product, productIndex) => {
-              if (!product.result) return null;
-              
-              const stone = stoneOptions.find(s => s["Stone Type"] === product.stone);
-              const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
-              const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
-              
-              const pieces = Array(parseInt(product.quantity) || 1).fill().map((_, i) => ({
-                id: i + 1,
-                width: parseFloat(product.width) || 0,
-                depth: parseFloat(product.depth) || 0,
-                name: `${product.stone} #${i + 1}`
-              }));
-              
-              return (
-                <Card key={productIndex} className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-teal-600" />
-                    Layout Visualization: {product.customName || `Product ${productIndex + 1}`}
-                  </h3>
-                  
-                  <div className="bg-gray-50 rounded-xl p-8">
-                    <SlabLayoutVisualization 
-                      pieces={pieces}
-                      slabWidth={slabWidth}
-                      slabHeight={slabHeight}
-                      maxPiecesPerSlab={product.result.topsPerSlab}
-                      includeKerf={settings.includeKerf}
-                      kerfWidth={settings.kerfWidth}
-                      showMaxLayout={false}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 border border-gray-200">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <Info className="w-4 h-4" />
-                        Layout Details
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Piece Size:</span>
-                          <span className="font-medium">{product.width}" × {product.depth}"</span>
+            {settings?.multiProductOptimization && optimizationData ? (
+              // Show multi-product optimized layouts
+              Object.entries(optimizationData).map(([stoneType, optimizationResult]) => {
+                if (optimizationResult.error || !optimizationResult.slabs) return null;
+                
+                const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+                const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
+                const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
+                
+                return (
+                  <Card key={stoneType} className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-purple-600" />
+                      Multi-Product Optimization: {stoneType}
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      {optimizationResult.slabs.map((slab, slabIndex) => (
+                        <div key={slabIndex} className="bg-gray-50 rounded-xl p-8">
+                          <h4 className="text-center text-sm font-medium text-gray-700 mb-4">
+                            Slab {slabIndex + 1} of {optimizationResult.slabs.length}
+                          </h4>
+                          <MultiProductSlabVisualization 
+                            slabData={slab}
+                            slabWidth={slabWidth}
+                            slabHeight={slabHeight}
+                            allProducts={allResults}
+                            settings={settings}
+                          />
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Slab Size:</span>
-                          <span className="font-medium">{slabWidth}" × {slabHeight}"</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Kerf Width:</span>
-                          <span className="font-medium">{settings.includeKerf ? `${settings.kerfWidth}"` : 'Not included'}</span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                     
-                    <div className="bg-gradient-to-br from-teal-50 to-white rounded-lg p-4 border border-teal-200">
-                      <h4 className="text-sm font-semibold text-teal-700 mb-3 flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4" />
-                        Optimization Results
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-teal-600">Max Pieces/Slab:</span>
-                          <span className="font-bold text-teal-700">{product.result.topsPerSlab}</span>
+                    <div className="mt-6 p-4 bg-purple-50 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div>
+                          <p className="text-sm text-purple-600">Total Slabs</p>
+                          <p className="text-2xl font-bold text-purple-900">{optimizationResult.totalSlabs}</p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-teal-600">Total Quantity:</span>
-                          <span className="font-bold text-teal-700">{product.quantity}</span>
+                        <div>
+                          <p className="text-sm text-purple-600">Average Efficiency</p>
+                          <p className="text-2xl font-bold text-purple-900">{optimizationResult.averageEfficiency?.toFixed(1)}%</p>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-teal-600">Efficiency:</span>
-                          <span className={`font-bold ${
-                            product.result.efficiency > 80 ? 'text-green-600' : 
-                            product.result.efficiency > 60 ? 'text-yellow-600' : 'text-red-600'
-                          }`}>{product.result.efficiency?.toFixed(1) || '0'}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-teal-600">Slabs Needed:</span>
-                          <span className="font-bold text-teal-700">{product.result.totalSlabsNeeded}</span>
+                        <div>
+                          <p className="text-sm text-purple-600">Products Combined</p>
+                          <p className="text-2xl font-bold text-purple-900">
+                            {allResults.filter(p => p.stone === stoneType).length}
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })
+            ) : (
+              // Show individual product layouts (standard mode)
+              allResults.map((product, productIndex) => {
+                if (!product.result) return null;
+                
+                const stone = stoneOptions.find(s => s["Stone Type"] === product.stone);
+                const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
+                const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
+                
+                const pieces = Array(parseInt(product.quantity) || 1).fill().map((_, i) => ({
+                  id: i + 1,
+                  width: parseFloat(product.width) || 0,
+                  depth: parseFloat(product.depth) || 0,
+                  name: `${product.stone} #${i + 1}`
+                }));
+                
+                return (
+                  <Card key={productIndex} className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-teal-600" />
+                      Layout Visualization: {product.customName || `Product ${productIndex + 1}`}
+                    </h3>
+                    
+                    <div className="bg-gray-50 rounded-xl p-8">
+                      <SlabLayoutVisualization 
+                        pieces={pieces}
+                        slabWidth={slabWidth}
+                        slabHeight={slabHeight}
+                        maxPiecesPerSlab={product.result.topsPerSlab}
+                        includeKerf={settings.includeKerf}
+                        kerfWidth={settings.kerfWidth}
+                        showMaxLayout={false}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                      <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 border border-gray-200">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          <Info className="w-4 h-4" />
+                          Layout Details
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Piece Size:</span>
+                            <span className="font-medium">{product.width}" × {product.depth}"</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Slab Size:</span>
+                            <span className="font-medium">{slabWidth}" × {slabHeight}"</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Kerf Width:</span>
+                            <span className="font-medium">{settings.includeKerf ? `${settings.kerfWidth}"` : 'Not included'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-teal-50 to-white rounded-lg p-4 border border-teal-200">
+                        <h4 className="text-sm font-semibold text-teal-700 mb-3 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          Optimization Results
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-teal-600">Max Pieces/Slab:</span>
+                            <span className="font-bold text-teal-700">{product.result.topsPerSlab}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-teal-600">Total Quantity:</span>
+                            <span className="font-bold text-teal-700">{product.quantity}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-teal-600">Efficiency:</span>
+                            <span className={`font-bold ${
+                              product.result.efficiency > 80 ? 'text-green-600' : 
+                              product.result.efficiency > 60 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>{product.result.efficiency?.toFixed(1) || '0'}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-teal-600">Slabs Needed:</span>
+                            <span className="font-bold text-teal-700">{product.result.totalSlabsNeeded}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+            )}
           </div>
         )}
 
@@ -185,6 +259,11 @@ export const ResultsView = ({
                       </h3>
                       <p className="text-gray-600 text-sm">{p.stone}</p>
                     </div>
+                    {p.result?.multiProductOptimized && (
+                      <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                        ✨ Multi-Optimized
+                      </div>
+                    )}
                   </div>
                   
                   {/* Product Details Grid - Better spacing */}
@@ -211,7 +290,7 @@ export const ResultsView = ({
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slabs</p>
-                      <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded || '-'}</p>
+                      <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded?.toFixed(1) || '-'}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Efficiency</p>
