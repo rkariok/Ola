@@ -1,44 +1,49 @@
-// Save this as: utils/aiDrawingAnalysis.js
+// src/utils/aiDrawingAnalysis.js
+import { preprocessImageInBrowser } from './browserImagePreprocessing';
 
 export const analyzeDrawingWithAI = async (file) => {
-  const reader = new FileReader();
+  // Show loading state
+  console.log('Starting AI drawing analysis...');
   
-  return new Promise((resolve, reject) => {
-    reader.readAsDataURL(file);
+  try {
+    // Validate file
+    if (!file) {
+      throw new Error('No file provided');
+    }
     
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result.split(',')[1];
-        
-        const response = await fetch('/api/claude-extract-dimensions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            image: base64Data
-          })
-        });
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      throw new Error('File too large. Please use images under 10MB.');
+    }
+    
+    // Preprocess image for better clarity
+    console.log('Preprocessing image for better clarity...');
+    const processedImage = await preprocessImageInBrowser(file);
+    console.log('Preprocessing complete!');
+    
+    // Send to Claude API
+    const response = await fetch('/api/claude-extract-dimensions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: processedImage
+      })
+    });
 
-        const result = await response.json();
-        
-        if (result.success && result.data.pieces) {
-          resolve(result.data);
-        } else {
-          const errorMsg = result.error || "Analysis failed";
-          const suggestions = result.suggestions ? "\n\nSuggestions:\n• " + result.suggestions.join("\n• ") : "";
-          reject(new Error(`${errorMsg}${suggestions}`));
-        }
-      } catch (error) {
-        console.error("Claude analysis error:", error);
-        reject(error);
-      }
-    };
+    const result = await response.json();
     
-    reader.onerror = () => {
-      reject(new Error("Failed to read file"));
-    };
-  });
+    if (result.success && result.data.pieces) {
+      return result.data;
+    } else {
+      const errorMsg = result.error || "Analysis failed";
+      const suggestions = result.suggestions ? "\n\nSuggestions:\n• " + result.suggestions.join("\n• ") : "";
+      throw new Error(`${errorMsg}${suggestions}`);
+    }
+  } catch (error) {
+    console.error("Claude analysis error:", error);
+    throw error;
+  }
 };
 
 export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, products, stoneOptions) => {
