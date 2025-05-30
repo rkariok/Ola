@@ -84,7 +84,7 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   
   // Calculate costs WITHOUT markup first
   const materialCost = (slabCost * totalSlabsNeeded) * (1 + settings.breakageBuffer/100);
-  const fabricationCost = usableAreaSqft * fabCost;
+  const fabricationCost = settings.includeFabrication ? (usableAreaSqft * fabCost) : 0;
   
   // Raw cost is the sum of material and fabrication costs (no markup yet)
   const rawCost = materialCost + fabricationCost;
