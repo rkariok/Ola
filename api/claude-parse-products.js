@@ -1,13 +1,30 @@
 // Save this as: api/claude-parse-products.js
-// This should go in the same directory as your existing Claude API endpoint
+// Copy the EXACT same imports and setup from your working claude-extract-dimensions.js file
 
+// Option A: If your existing file uses this setup
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: process.env.CLAUDE_API_KEY,
 });
 
+// Option B: If your existing file uses different setup, copy that instead
+// For example, some setups use:
+// const anthropic = new Anthropic({
+//   apiKey: process.env.CLAUDE_API_KEY,  // Different env var name
+// });
+
 export default async function handler(req, res) {
+  // Add CORS headers if your existing endpoint has them
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -67,6 +84,8 @@ Examples:
 Return only valid JSON, no additional text.`;
 
   try {
+    console.log('Calling Claude API for text parsing...');
+    
     const response = await anthropic.messages.create({
       model: 'claude-3-sonnet-20240229',
       max_tokens: 2000,
