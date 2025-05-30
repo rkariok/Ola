@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ProgressSteps } from './components/ProgressSteps';
-import { ContactForm } from './components/ContactForm';
+import { ContactForm, BulkProductImport } from './components/ContactForm';
 import { ProductCard } from './components/ProductCard';
 import { ResultsView } from './components/ResultsView';
 import { SavedQuotesView } from './components/SavedQuotesView';
@@ -269,10 +269,14 @@ export default function StoneTopEstimator() {
           </aside>
           
           <main className="space-y-6">
-            {/* UPDATED: ContactForm now includes bulk parsing */}
+            {/* Contact Information */}
             <ContactForm 
               userInfo={userInfo}
               onChange={setUserInfo}
+            />
+            
+            {/* NEW: Separate Bulk Import Section */}
+            <BulkProductImport 
               stoneOptions={stoneOptions}
               onProductsParsed={handleBulkProductAdd}
             />
