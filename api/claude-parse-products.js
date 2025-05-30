@@ -1,23 +1,16 @@
-// Save this as: api/claude-parse-products.js
-// Copy the EXACT same imports and setup from your working claude-extract-dimensions.js file
-
-// Option A: If your existing file uses this setup
+// api/claude-parse-products.js - TEXT PARSING WITH SONNET 4
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
 
-// Option B: If your existing file uses different setup, copy that instead
-// For example, some setups use:
-// const anthropic = new Anthropic({
-//   apiKey: process.env.CLAUDE_API_KEY,  // Different env var name
-// });
-
 export default async function handler(req, res) {
-  // Add CORS headers if your existing endpoint has them
+  console.log('=== Claude Text Parsing API (Sonnet 4) ===');
+  
+  // Add CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') {
@@ -37,6 +30,10 @@ export default async function handler(req, res) {
       error: 'No text provided' 
     });
   }
+
+  console.log('Processing text parsing with Sonnet 4...');
+  console.log('Text length:', text.length);
+  console.log('Available stones:', availableStones?.length || 0);
 
   const prompt = `Parse this stone fabrication product text and return ONLY valid JSON.
 
@@ -70,11 +67,12 @@ Rules:
 CRITICAL: Return ONLY the JSON object, no explanations.`;
 
   try {
-    console.log('Calling Claude API for text parsing...');
+    console.log('Calling Claude Sonnet 4 API for text parsing...');
     
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-20250514',  // SONNET 4 FOR FAST TEXT PARSING
       max_tokens: 2000,
+      temperature: 0.1,
       messages: [
         {
           role: 'user',
@@ -83,8 +81,12 @@ CRITICAL: Return ONLY the JSON object, no explanations.`;
       ]
     });
 
+    console.log('Claude Sonnet 4 API response received');
+    console.log('Usage:', response.usage);
+
     const content = response.content[0].text.trim();
-    console.log('Raw Claude response:', content);
+    console.log('Raw Claude response length:', content.length);
+    console.log('First 100 chars:', content.substring(0, 100));
 
     // Try to clean the response if it has extra text
     let jsonText = content;
@@ -97,7 +99,7 @@ CRITICAL: Return ONLY the JSON object, no explanations.`;
       jsonText = content.substring(jsonStart, jsonEnd + 1);
     }
     
-    console.log('Cleaned JSON text:', jsonText);
+    console.log('Cleaned JSON length:', jsonText.length);
 
     // Parse the JSON response
     let parsed;
@@ -105,7 +107,7 @@ CRITICAL: Return ONLY the JSON object, no explanations.`;
       parsed = JSON.parse(jsonText);
     } catch (parseError) {
       console.error('JSON Parse Error:', parseError);
-      console.error('Attempted to parse:', jsonText);
+      console.error('Attempted to parse:', jsonText.substring(0, 200));
       throw new Error('Claude returned invalid JSON format');
     }
     
@@ -147,18 +149,20 @@ CRITICAL: Return ONLY the JSON object, no explanations.`;
       });
     }
 
-    console.log('Successfully parsed products:', validProducts);
+    console.log('Successfully parsed products with Sonnet 4:', validProducts.length);
 
     res.status(200).json({
       success: true,
       data: {
         products: validProducts,
-        totalFound: validProducts.length
+        totalFound: validProducts.length,
+        aiModel: 'claude-sonnet-4',
+        parsedAt: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Claude parsing error:', error);
+    console.error('Claude Sonnet 4 parsing error:', error);
     
     // More specific error messages
     if (error.message.includes('JSON')) {
@@ -168,10 +172,27 @@ CRITICAL: Return ONLY the JSON object, no explanations.`;
       });
     }
     
-    if (error.message.includes('API')) {
+    if (error.message?.includes('api_key')) {
       return res.status(500).json({
         success: false,
-        error: 'API connection error. Please try again in a moment.'
+        error: 'API authentication failed',
+        details: 'Invalid or missing Claude API key'
+      });
+    }
+    
+    if (error.message?.includes('rate_limit')) {
+      return res.status(429).json({
+        success: false,
+        error: 'Rate limit exceeded',
+        details: 'Too many requests to Claude API'
+      });
+    }
+    
+    if (error.message?.includes('model')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Model not available',
+        details: 'Claude Sonnet 4 model not accessible'
       });
     }
 
