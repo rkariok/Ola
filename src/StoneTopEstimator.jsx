@@ -101,6 +101,19 @@ export default function StoneTopEstimator() {
     setProducts(products.filter((_, i) => i !== index));
   };
 
+  // NEW: Handle bulk products from AI parsing
+  const handleBulkProductAdd = (parsedProducts) => {
+    console.log('Adding bulk products:', parsedProducts);
+    
+    // Remove the initial empty product if it's still empty
+    const filteredExisting = products.filter(p => 
+      p.width || p.depth || p.customName || p.note
+    );
+    
+    // Add new products
+    setProducts([...filteredExisting, ...parsedProducts]);
+  };
+
   // Drawing upload handler
   const handleDrawingUpload = async (e, index) => {
     const selectedFile = e.target.files[0];
@@ -256,9 +269,12 @@ export default function StoneTopEstimator() {
           </aside>
           
           <main className="space-y-6">
+            {/* UPDATED: ContactForm now includes bulk parsing */}
             <ContactForm 
               userInfo={userInfo}
               onChange={setUserInfo}
+              stoneOptions={stoneOptions}
+              onProductsParsed={handleBulkProductAdd}
             />
             
             {products.map((product, index) => (
