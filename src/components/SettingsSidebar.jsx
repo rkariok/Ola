@@ -14,6 +14,12 @@ export const SettingsSidebar = ({ settings, onChange }) => {
       
       <div className="space-y-6">
         <Toggle 
+          label="Include Fabrication" 
+          checked={settings.includeFabrication} 
+          onChange={() => updateSetting('includeFabrication', !settings.includeFabrication)} 
+        />
+        
+        <Toggle 
           label="Include Kerf" 
           checked={settings.includeKerf} 
           onChange={() => updateSetting('includeKerf', !settings.includeKerf)} 
@@ -67,17 +73,6 @@ export const SettingsSidebar = ({ settings, onChange }) => {
             <option value={15}>15% - High Risk</option>
             <option value={20}>20% - Very High Risk</option>
           </select>
-        </div>
-        
-        <div className="border-t pt-6">
-          <Toggle 
-            label="Include Fabrication" 
-            checked={settings.includeFabrication} 
-            onChange={() => updateSetting('includeFabrication', !settings.includeFabrication)} 
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            Include fabrication costs in the total price calculation
-          </p>
         </div>
       </div>
 
