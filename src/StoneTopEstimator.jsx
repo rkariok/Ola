@@ -48,7 +48,8 @@ export default function StoneTopEstimator() {
     kerfWidth: 0.125,
     breakageBuffer: 10,
     showVisualLayouts: true,
-    multiProductOptimization: false
+    multiProductOptimization: false,
+    includeFabrication: true
   });
 
   // Load saved quotes and stone data on mount
