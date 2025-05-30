@@ -18,7 +18,33 @@ export const ProductCard = ({
   };
 
   return (
-    <Card className="p-6">
+    <Card className={`p-6 ${product.aiParsed ? 'ring-1 ring-purple-200 bg-purple-50/30' : ''}`}>
+      {/* AI Parsed Indicator */}
+      {product.aiParsed && (
+        <div className="mb-3 px-3 py-2 bg-purple-100 border border-purple-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-purple-700 font-medium flex items-center gap-1">
+              🤖 AI Parsed Product
+              {product.confidence && (
+                <span className={`text-xs px-2 py-1 rounded ${
+                  product.confidence === 'high' ? 'bg-green-100 text-green-700' :
+                  product.confidence === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {product.confidence} confidence
+                </span>
+              )}
+            </span>
+            <button 
+              onClick={() => updateField('aiParsed', false)}
+              className="text-purple-500 hover:text-purple-700 text-xs"
+            >
+              dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
           {product.customName || `Product ${index + 1}`}
