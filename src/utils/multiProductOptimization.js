@@ -309,7 +309,7 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         const areaRatio = productData.area / totalPiecesArea;
         const materialCost = totalMaterialCost * areaRatio;
         
-        const fabricationCost = usableAreaSqft * fabCost;
+        const fabricationCost = settings.includeFabrication ? (usableAreaSqft * fabCost) : 0;
         const rawCost = materialCost + fabricationCost;
         const finalPrice = rawCost * markup;
         
