@@ -1,4 +1,4 @@
-// api/claude-extract-dimensions.js - DEBUG VERSION
+// api/claude-extract-dimensions.js - UPGRADED TO OPUS 4
 import Anthropic from '@anthropic-ai/sdk';
 
 // Initialize Claude with error checking
@@ -31,9 +31,8 @@ function determineMediaType(base64Data) {
 }
 
 export default async function handler(req, res) {
-  console.log('=== Claude API Handler Called ===');
+  console.log('=== Claude Drawing Analysis API (Opus 4) ===');
   console.log('Method:', req.method);
-  console.log('Headers:', req.headers);
   
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -69,7 +68,7 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('Processing Claude extraction request...');
+    console.log('Processing Claude drawing extraction with Opus 4...');
 
     // Get the uploaded image data
     const { image, hints, retryWithContext } = req.body;
@@ -89,52 +88,62 @@ export default async function handler(req, res) {
     const mediaType = determineMediaType(image);
     console.log('Detected media type:', mediaType);
 
-    // Simple test prompt first
-    const analysisPrompt = `Analyze this construction/architectural drawing and extract all stone countertop pieces with their dimensions.
+    // Enhanced prompt for Opus 4 - leveraging its superior reasoning
+    const analysisPrompt = `You are an expert stone fabrication analyst. Carefully examine this architectural/construction drawing and extract ALL stone countertop pieces with precise dimensions.
 
-Look for:
-- All countertop pieces
-- Islands
-- Backsplashes
-- Dimension markings (numbers with " or ')
-- Edge details
+Use your advanced visual reasoning to:
+- Identify all countertop pieces (kitchen perimeter, islands, vanities, wet bars)
+- Read dimension markings accurately (look for numbers with " or ' marks)
+- Understand spatial relationships and infer missing dimensions when logical
+- Distinguish between different types of stone surfaces
+- Account for complex layouts and overlapping elements
 
-Return a JSON object with this structure:
+For each piece found, extract:
+- Precise dimensions in inches (convert feet: 2' = 24", 4'-6" = 54")
+- Type classification (countertop, island, vanity, backsplash)
+- Edge details if visible
+- Any special notes or features
+
+Return ONLY this JSON structure:
 {
   "success": true,
   "data": {
     "pieces": [
       {
-        "name": "Main Counter",
+        "name": "Kitchen Perimeter Counter",
         "width": 96,
         "depth": 25,
         "type": "countertop",
         "edgeDetail": "Eased",
-        "notes": "any notes"
+        "notes": "L-shaped section",
+        "confidence": "high"
       }
     ],
     "summary": {
       "totalPieces": 1,
       "drawingType": "kitchen",
-      "confidence": "high"
+      "confidence": "high",
+      "complexLayout": false
     }
   }
 }
 
-If you cannot read the drawing, return:
+If dimensions are unclear or missing, use your reasoning to provide best estimates and mark confidence as "medium" or "low".
+
+If the drawing is completely unreadable, return:
 {
   "success": false,
-  "error": "Cannot read dimensions",
-  "suggestions": ["what would help"]
+  "error": "Cannot analyze drawing",
+  "suggestions": ["Upload higher resolution image", "Ensure dimension lines are visible", "Check if drawing shows stone surfaces"]
 }`;
 
-    console.log('Calling Claude API...');
-    console.log('Using model: claude-3-5-sonnet-20241022');
+    console.log('Calling Claude Opus 4 API...');
+    console.log('Using model: claude-opus-4-20250514');
     
     try {
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 3000,
+        model: 'claude-opus-4-20250514',  // UPGRADED TO OPUS 4
+        max_tokens: 4000,  // Increased for more detailed analysis
         temperature: 0.1,
         messages: [{
           role: 'user',
@@ -155,7 +164,7 @@ If you cannot read the drawing, return:
         }]
       });
 
-      console.log('Claude API response received successfully');
+      console.log('Claude Opus 4 API response received successfully');
       console.log('Response ID:', response.id);
       console.log('Usage:', response.usage);
 
@@ -188,18 +197,17 @@ If you cannot read the drawing, return:
         }));
 
         extractedData.data.extractedAt = new Date().toISOString();
-        extractedData.data.aiModel = 'claude-3-5-sonnet';
+        extractedData.data.aiModel = 'claude-opus-4';  // Updated model info
         extractedData.data.preprocessed = true;
       }
 
-      console.log('Sending successful response');
+      console.log('Sending successful response from Opus 4');
       return res.status(200).json(extractedData);
 
     } catch (apiError) {
-      console.error('Claude API call failed:', apiError);
+      console.error('Claude Opus 4 API call failed:', apiError);
       console.error('Error type:', apiError.constructor.name);
       console.error('Error message:', apiError.message);
-      console.error('Full error:', JSON.stringify(apiError, null, 2));
       
       // Check for specific error types
       if (apiError.message?.includes('api_key')) {
@@ -220,6 +228,15 @@ If you cannot read the drawing, return:
         });
       }
       
+      if (apiError.message?.includes('model')) {
+        return res.status(500).json({
+          success: false,
+          error: 'Model not available',
+          details: 'Claude Opus 4 model not accessible',
+          suggestions: ['Check if your API key has access to Opus 4', 'Try again in a moment']
+        });
+      }
+      
       throw apiError; // Re-throw to be caught by outer catch
     }
 
@@ -229,7 +246,7 @@ If you cannot read the drawing, return:
     
     return res.status(500).json({
       success: false,
-      error: 'Analysis failed',
+      error: 'Drawing analysis failed',
       details: error.message || 'Unknown error',
       suggestions: [
         'Ensure the drawing has clear dimension lines',
