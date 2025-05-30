@@ -46,6 +46,47 @@ export const analyzeDrawingWithAI = async (file) => {
   }
 };
 
+// NEW: Text parsing function
+export const parseProductText = async (text, stoneOptions) => {
+  console.log('Starting AI text parsing...');
+  
+  try {
+    // Validate input
+    if (!text || !text.trim()) {
+      throw new Error('No text provided');
+    }
+    
+    if (text.length > 10000) { // 10k character limit
+      throw new Error('Text too long. Please use shorter descriptions.');
+    }
+    
+    // Send to Claude API
+    const response = await fetch('/api/claude-parse-products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: text,
+        availableStones: stoneOptions.map(s => s["Stone Type"])
+      })
+    });
+
+    const result = await response.json();
+    
+    if (result.success && result.data.products) {
+      console.log('Text parsing successful:', result.data);
+      return result.data;
+    } else {
+      const errorMsg = result.error || "Text parsing failed";
+      throw new Error(errorMsg);
+    }
+  } catch (error) {
+    console.error("Claude text parsing error:", error);
+    throw error;
+  }
+};
+
 export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, products, stoneOptions) => {
   console.log("Claude extracted data:", claudeData);
   
