@@ -17,6 +17,24 @@ export const ProductCard = ({
     onUpdate(index, field, value);
   };
 
+  // Get unique values from stone options for dropdowns
+  const getUniqueValues = (field) => {
+    const values = new Set();
+    stoneOptions.forEach(stone => {
+      if (stone[field]) {
+        values.add(stone[field]);
+      }
+    });
+    return Array.from(values);
+  };
+
+  const finishOptions = getUniqueValues('Finish');
+  const thicknessOptions = getUniqueValues('Thickness');
+  const slabSizeOptions = getUniqueValues('Slab Size');
+
+  // Get current stone data to sync dependent fields
+  const currentStone = stoneOptions.find(s => s["Stone Type"] === product.stone);
+
   return (
     <Card className={`p-6 ${product.aiParsed ? 'ring-1 ring-purple-200 bg-purple-50/30' : ''}`}>
       {/* AI Parsed Indicator */}
@@ -68,7 +86,16 @@ export const ProductCard = ({
           </label>
           <select
             value={product.stone}
-            onChange={(e) => updateField('stone', e.target.value)}
+            onChange={(e) => {
+              updateField('stone', e.target.value);
+              // Auto-update finish, thickness, and slab size based on selected stone
+              const selectedStone = stoneOptions.find(s => s["Stone Type"] === e.target.value);
+              if (selectedStone) {
+                if (selectedStone['Finish']) updateField('finish', selectedStone['Finish']);
+                if (selectedStone['Thickness']) updateField('thickness', selectedStone['Thickness']);
+                if (selectedStone['Slab Size']) updateField('slabSize', selectedStone['Slab Size']);
+              }
+            }}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
             <option value="">Select...</option>
@@ -176,17 +203,65 @@ export const ProductCard = ({
         </div>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Notes
-        </label>
-        <textarea
-          value={product.note}
-          onChange={(e) => updateField('note', e.target.value)}
-          placeholder="Add any special instructions..."
-          rows={2}
-          className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-        />
+      {/* New row with 3 dropdowns and smaller notes field */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Finish
+          </label>
+          <select
+            value={product.finish || ''}
+            onChange={(e) => updateField('finish', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select...</option>
+            {finishOptions.map((finish, i) => (
+              <option key={i} value={finish}>{finish}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Thickness
+          </label>
+          <select
+            value={product.thickness || ''}
+            onChange={(e) => updateField('thickness', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select...</option>
+            {thicknessOptions.map((thickness, i) => (
+              <option key={i} value={thickness}>{thickness}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Slab Size
+          </label>
+          <select
+            value={product.slabSize || ''}
+            onChange={(e) => updateField('slabSize', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select...</option>
+            {slabSizeOptions.map((size, i) => (
+              <option key={i} value={size}>{size}</option>
+            ))}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Notes
+          </label>
+          <textarea
+            value={product.note}
+            onChange={(e) => updateField('note', e.target.value)}
+            placeholder="Add any special instructions..."
+            rows={1}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+          />
+        </div>
       </div>
       
       {loadingAI && (
