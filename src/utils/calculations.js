@@ -1,7 +1,7 @@
 // Save this as: utils/calculations.js
 
-export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, includeKerf, kerfWidth) => {
-  const kerf = includeKerf ? kerfWidth : 0;
+export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, includeInstallation, kerfWidth) => {
+  const kerf = includeInstallation && kerfWidth > 0 ? kerfWidth : 0;
   let maxPieces = 0;
 
   const fit1W = Math.floor((slabW + kerf) / (pieceW + kerf));
@@ -72,7 +72,7 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
 
   const maxPiecesPerSlab = calculateMaxPiecesPerSlab(
     w, d, slabWidth, slabHeight, 
-    settings.includeKerf, settings.kerfWidth
+    settings.includeInstallation, settings.kerfWidth
   );
   
   const area = w * d;
