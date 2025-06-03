@@ -65,7 +65,7 @@ export const ProductCard = ({
 
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {product.customName || `Product ${index + 1}`}
+          {product.customName || `Type ${index + 1}`}
         </h3>
         {canRemove && (
           <Button
