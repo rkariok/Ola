@@ -63,12 +63,12 @@ export const sendQuoteEmail = async (userInfo, allResults, stoneOptions) => {
           </div>
           
           <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
-            <h3 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px;">Products in Your Quote:</h3>
+            <h3 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px;">Types in Your Quote:</h3>
             ${allResults.map(p => `
               <div style="border-bottom: 1px solid #e5e7eb; padding: 12px 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <div>
-                    <strong style="color: #1f2937;">${p.customName || 'Product'}</strong>
+                    <strong style="color: #1f2937;">${p.customName || 'Type'}</strong>
                     <div style="color: #6b7280; font-size: 14px;">${p.stone} • ${p.width}"×${p.depth}" • Qty: ${p.quantity}</div>
                   </div>
                   <div style="color: #059669; font-size: 20px; font-weight: bold;">$${p.result?.finalPrice?.toFixed(2) || '0.00'}</div>
@@ -108,29 +108,7 @@ export const sendQuoteEmail = async (userInfo, allResults, stoneOptions) => {
       total_price: '$' + totalPrice,
       total_slabs: totalSlabs.toString(),
       average_efficiency: avgEfficiency + '%',
-      products_list: allResults.map(p => 
-        `- ${p.customName || 'Product'}: ${p.stone} ${p.width}"×${p.depth}" (Qty: ${p.quantity}) - $${p.result?.finalPrice?.toFixed(2) || '0.00'}`
+      types_list: allResults.map(p => 
+        `- ${p.customName || 'Type'}: ${p.stone} ${p.width}"×${p.depth}" (Qty: ${p.quantity}) - $${p.result?.finalPrice?.toFixed(2) || '0.00'}`
       ).join('\n'),
-      quote_date: new Date().toLocaleDateString(),
-      html_content: emailHTML
-    };
-
-    const response = await window.emailjs.send(
-      'service_4xwxsbp',
-      'template_pw68h0p',
-      templateParams
-    );
-
-    if (response.status === 200) {
-      alert(`✅ Quote sent successfully to ${userInfo.email}!\n\nThe customer will receive a beautifully formatted quote with all details.`);
-      return { success: true };
-    } else {
-      throw new Error('Failed to send email');
-    }
-    
-  } catch (error) {
-    console.error('Failed to send email:', error);
-    alert(`❌ Failed to send email: ${error.message || 'Unknown error'}\n\nPlease check your EmailJS configuration and try again.`);
-    return { success: false, error: error.message };
-  }
-};
+      quote_date: new Date().
