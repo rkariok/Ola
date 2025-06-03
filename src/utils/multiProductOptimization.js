@@ -47,15 +47,38 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
       try {
         const { stoneType, thickness, finish, pieces } = stoneGroup;
         
-        // Find ANY matching stone variant in options (we'll use the first match for slab dimensions)
-        const stone = stoneOptions.find(s => 
+        // Find ANY matching stone variant in options with flexible matching
+        let stone = stoneOptions.find(s => 
           s["Stone Type"] === stoneType &&
           s["Thickness"] === thickness &&
           s["Finish"] === finish
         );
         
+        // If no exact match, try without finish
+        if (!stone) {
+          stone = stoneOptions.find(s => 
+            s["Stone Type"] === stoneType &&
+            s["Thickness"] === thickness
+          );
+          if (stone) {
+            console.warn(`Using stone without exact finish match for ${stoneKey}`);
+          }
+        }
+        
+        // If still no match, try with just stone type
+        if (!stone) {
+          stone = stoneOptions.find(s => 
+            s["Stone Type"] === stoneType
+          );
+          if (stone) {
+            console.warn(`Using stone with only type match for ${stoneKey}`);
+          }
+        }
+        
         if (!stone) {
           console.warn(`Stone combination not found: ${stoneKey}`);
+          console.log('Looking for:', { stoneType, thickness, finish });
+          console.log('Available stones:', stoneOptions.filter(s => s["Stone Type"] === stoneType));
           // Still track this as an error so it's not optimized incorrectly
           // Use a unique key for the result to avoid conflicts
           optimizedResults[stoneKey] = { 
@@ -66,6 +89,8 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
           };
           return;
         }
+        
+        console.log(`Found stone for ${stoneKey}:`, stone);
         
         const slabWidth = parseFloat(stone["Slab Width"]) || 126;
         const slabHeight = parseFloat(stone["Slab Height"]) || 63;
@@ -86,8 +111,10 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
         const slabs = [];
         const placedPieces = [];
         
-        pieces.forEach(piece => {
+        pieces.forEach((piece, pieceIndex) => {
           let placed = false;
+          
+          console.log(`Trying to place piece ${pieceIndex}: ${piece.width}x${piece.depth} (${piece.customName})`);
           
           // Try to place in existing slabs
           for (let slabIndex = 0; slabIndex < slabs.length && !placed; slabIndex++) {
@@ -95,6 +122,7 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
             const placement = findBestPlacement(piece, slab, slabWidth, slabHeight, kerf);
             
             if (placement) {
+              console.log(`  Placed on slab ${slabIndex} at (${placement.x}, ${placement.y})${placement.rotated ? ' ROTATED' : ''}`);
               slab.pieces.push({
                 ...piece,
                 ...placement,
@@ -118,20 +146,31 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
               height: slabHeight
             };
             
-            // Place piece in corner of new slab
+            // Try both orientations for the first piece on new slab
+            let firstPlacement = { x: 0, y: 0, rotated: false };
+            
+            // Check if piece needs rotation to fit
+            if (piece.width > slabWidth || piece.depth > slabHeight) {
+              // Try rotated
+              if (piece.depth <= slabWidth && piece.width <= slabHeight) {
+                firstPlacement.rotated = true;
+                console.log(`  Created new slab ${newSlabIndex} with ROTATED piece (doesn't fit standard)`);
+              } else {
+                console.warn(`  Piece too large even with rotation!`);
+              }
+            } else {
+              console.log(`  Created new slab ${newSlabIndex}`);
+            }
+            
             newSlab.pieces.push({
               ...piece,
-              x: 0,
-              y: 0,
-              rotated: false,
+              ...firstPlacement,
               slabIndex: newSlabIndex
             });
             
             placedPieces.push({
               ...piece,
-              x: 0,
-              y: 0,
-              rotated: false,
+              ...firstPlacement,
               slabIndex: newSlabIndex
             });
             
@@ -203,22 +242,40 @@ function findBestPlacement(piece, slab, slabWidth, slabHeight, kerf) {
       candidatePositions.push({ x: existingPiece.x + w + kerf, y: existingPiece.y });
       // Below existing piece
       candidatePositions.push({ x: existingPiece.x, y: existingPiece.y + h + kerf });
+      // Bottom-right corner for better packing
+      candidatePositions.push({ x: existingPiece.x + w + kerf, y: existingPiece.y + h + kerf });
+    });
+    
+    // Remove duplicates and invalid positions
+    const uniquePositions = [];
+    const seen = new Set();
+    
+    candidatePositions.forEach(pos => {
+      const key = `${pos.x},${pos.y}`;
+      if (!seen.has(key) && pos.x >= 0 && pos.y >= 0) {
+        seen.add(key);
+        uniquePositions.push(pos);
+      }
     });
     
     // Try each position with both orientations
-    for (const pos of candidatePositions) {
+    for (const pos of uniquePositions) {
       for (const rotated of [false, true]) {
         const w = rotated ? piece.depth : piece.width;
         const h = rotated ? piece.width : piece.depth;
         
+        // Skip if piece is square and already tried non-rotated
+        if (piece.width === piece.depth && rotated) continue;
+        
         // Check if piece fits at this position
         if (pos.x + w <= slabWidth && pos.y + h <= slabHeight) {
-          // Check for overlaps
+          // Check for overlaps with existing pieces
           let overlaps = false;
           for (const existing of slab.pieces) {
             const ew = existing.rotated ? existing.depth : existing.width;
             const eh = existing.rotated ? existing.width : existing.depth;
             
+            // Check if rectangles overlap (with kerf spacing)
             if (!(pos.x + w + kerf <= existing.x || 
                   pos.x >= existing.x + ew + kerf ||
                   pos.y + h + kerf <= existing.y || 
@@ -296,12 +353,26 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         return;
       }
       
-      // Find the stone with matching properties
-      const stone = stoneOptions.find(s => 
+      // Find the stone with matching properties using flexible matching
+      let stone = stoneOptions.find(s => 
         s["Stone Type"] === result.stoneType &&
         s["Thickness"] === result.thickness &&
         s["Finish"] === result.finish
       );
+      
+      // Fallback to less specific matches if needed
+      if (!stone) {
+        stone = stoneOptions.find(s => 
+          s["Stone Type"] === result.stoneType &&
+          s["Thickness"] === result.thickness
+        );
+      }
+      
+      if (!stone) {
+        stone = stoneOptions.find(s => 
+          s["Stone Type"] === result.stoneType
+        );
+      }
       
       if (!stone) {
         console.warn(`No stone found for optimized group: ${stoneKey}`);
