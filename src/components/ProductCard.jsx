@@ -79,7 +79,7 @@ export const ProductCard = ({
         )}
       </div>
       
-      {/* First row: Stone, Width, Depth, Quantity */}
+      {/* First row: Stone Type, Slab Size, Thickness, Finish */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -103,6 +103,71 @@ export const ProductCard = ({
             {stoneOptions.map((stone, i) => (
               <option key={i} value={stone["Stone Type"]}>{stone["Stone Type"]}</option>
             ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Slab Size
+          </label>
+          <select
+            value={product.slabSize || ''}
+            onChange={(e) => updateField('slabSize', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select...</option>
+            {slabSizeOptions.map((size, i) => (
+              <option key={i} value={size}>{size}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Thickness
+          </label>
+          <select
+            value={product.thickness || ''}
+            onChange={(e) => updateField('thickness', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select...</option>
+            {thicknessOptions.map((thickness, i) => (
+              <option key={i} value={thickness}>{thickness}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Finish
+          </label>
+          <select
+            value={product.finish || ''}
+            onChange={(e) => updateField('finish', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select...</option>
+            {finishOptions.map((finish, i) => (
+              <option key={i} value={finish}>{finish}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* Second row: Edge Detail, Width, Depth, Quantity */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Edge Detail
+          </label>
+          <select
+            value={product.edgeDetail}
+            onChange={(e) => updateField('edgeDetail', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="Eased">Eased</option>
+            <option value="1.5 mitered">1.5" Mitered</option>
+            <option value="Bullnose">Bullnose</option>
+            <option value="Ogee">Ogee</option>
+            <option value="Beveled">Beveled</option>
           </select>
         </div>
         <div>
@@ -140,71 +205,6 @@ export const ProductCard = ({
             min="1"
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
-        </div>
-      </div>
-      
-      {/* Second row: Edge Detail, Finish, Thickness, Slab Size */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Edge Detail
-          </label>
-          <select
-            value={product.edgeDetail}
-            onChange={(e) => updateField('edgeDetail', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="Eased">Eased</option>
-            <option value="1.5 mitered">1.5" Mitered</option>
-            <option value="Bullnose">Bullnose</option>
-            <option value="Ogee">Ogee</option>
-            <option value="Beveled">Beveled</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Finish
-          </label>
-          <select
-            value={product.finish || ''}
-            onChange={(e) => updateField('finish', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="">Select...</option>
-            {finishOptions.map((finish, i) => (
-              <option key={i} value={finish}>{finish}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Thickness
-          </label>
-          <select
-            value={product.thickness || ''}
-            onChange={(e) => updateField('thickness', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="">Select...</option>
-            {thicknessOptions.map((thickness, i) => (
-              <option key={i} value={thickness}>{thickness}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Slab Size
-          </label>
-          <select
-            value={product.slabSize || ''}
-            onChange={(e) => updateField('slabSize', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="">Select...</option>
-            {slabSizeOptions.map((size, i) => (
-              <option key={i} value={size}>{size}</option>
-            ))}
-          </select>
         </div>
       </div>
       
