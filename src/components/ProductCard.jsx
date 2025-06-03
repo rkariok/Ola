@@ -24,7 +24,7 @@ export const ProductCard = ({
         <div className="mb-3 px-3 py-2 bg-purple-100 border border-purple-200 rounded-lg">
           <div className="flex items-center justify-between">
             <span className="text-sm text-purple-700 font-medium flex items-center gap-1">
-              🤖 AI Parsed Product
+              🤖 AI Parsed Type
               {product.confidence && (
                 <span className={`text-xs px-2 py-1 rounded ${
                   product.confidence === 'high' ? 'bg-green-100 text-green-700' :
@@ -47,7 +47,7 @@ export const ProductCard = ({
 
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {product.customName || `Product ${index + 1}`}
+          {product.customName || `Type ${index + 1}`}
         </h3>
         {canRemove && (
           <Button
