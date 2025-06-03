@@ -13,7 +13,7 @@ import { calculateProductResults } from './utils/calculations';
 import { generateQuotePDF } from './utils/pdfGenerator';
 import { sendQuoteEmail } from './utils/emailService';
 import { analyzeDrawingWithAI, handleClaudeMultiplePiecesExtraction } from './utils/aiDrawingAnalysis';
-import { optimizeMultiProductLayout, applyMultiProductOptimization } from './utils/multiProductOptimization';
+import { optimizeMultiTypeLayout, applyMultiTypeOptimization } from './utils/multiTypeOptimization';
 
 export default function StoneTopEstimator() {
   // State management
@@ -152,9 +152,9 @@ export default function StoneTopEstimator() {
     };
     
     if (settings.multiProductOptimization) {
-      // Use multi-product optimization
-      optimizationResults = optimizeMultiProductLayout(products, stoneOptions, updatedSettings);
-      results = applyMultiProductOptimization(products, optimizationResults, stoneOptions, updatedSettings);
+      // Use multi-type optimization
+      optimizationResults = optimizeMultiTypeLayout(products, stoneOptions, updatedSettings);
+      results = applyMultiTypeOptimization(products, optimizationResults, stoneOptions, updatedSettings);
       setOptimizationData(optimizationResults);
     } else {
       // Use standard calculation
