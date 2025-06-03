@@ -51,7 +51,7 @@ export const MultiProductSlabVisualization = ({
     <div className="relative">
       <div className="mb-3 flex items-center justify-center gap-2 text-sm text-gray-600">
         <Package className="w-4 h-4" />
-        <span>Multi-Product Slab - {slabWidth}" × {slabHeight}"</span>
+        <span>Multi-Type Slab - {slabWidth}" × {slabHeight}"</span>
       </div>
       
       <div 
@@ -105,7 +105,7 @@ export const MultiProductSlabVisualization = ({
               }}
             >
               <div className="text-white font-bold text-[10px] drop-shadow-sm">
-                {product?.customName || `P${piece.productIndex + 1}`}
+                {product?.customName || `T${piece.productIndex + 1}`}
               </div>
               <div className="text-white/90 text-[9px] drop-shadow-sm">{width}×{height}"</div>
               {piece.rotated && (
@@ -143,7 +143,7 @@ export const MultiProductSlabVisualization = ({
                   }}
                 ></div>
                 <span className="text-gray-600">
-                  {product?.customName || `Product ${productIndex + 1}`} ({count})
+                  {product?.customName || `Type ${productIndex + 1}`} ({count})
                 </span>
               </div>
             );
