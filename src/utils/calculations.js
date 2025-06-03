@@ -48,8 +48,18 @@ export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, kerfWidt
 };
 
 export const calculateProductResults = (product, stoneOptions, settings) => {
-  const stone = stoneOptions.find(s => s["Stone Type"] === product.stone);
-  if (!stone) return { ...product, result: null };
+  // Find the exact stone combination for accurate pricing
+  const stone = stoneOptions.find(s => 
+    s["Stone Type"] === product.stone &&
+    s["Slab Size"] === product.slabSize &&
+    s["Thickness"] === product.thickness &&
+    s["Finish"] === product.finish
+  );
+  
+  if (!stone) {
+    console.warn('No exact stone combination found for:', product);
+    return { ...product, result: null };
+  }
 
   const slabCost = parseFloat(stone["Slab Cost"]);
   const fabCost = parseFloat(stone["Fab Cost"]);
@@ -58,7 +68,9 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const d = parseFloat(product.depth);
   const quantity = parseInt(product.quantity);
 
-  if (!w || !d || isNaN(slabCost) || isNaN(fabCost) || isNaN(markup)) return { ...product, result: null };
+  if (!w || !d || isNaN(slabCost) || isNaN(fabCost) || isNaN(markup)) {
+    return { ...product, result: null };
+  }
 
   const slabWidth = parseFloat(stone["Slab Width"]);
   const slabHeight = parseFloat(stone["Slab Height"]);
@@ -85,8 +97,11 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const materialCost = (slabCost * totalSlabsNeeded) * (1 + settings.breakageBuffer/100);
   const fabricationCost = settings.includeFabrication ? (usableAreaSqft * fabCost) : 0;
   
-  // Raw cost is the sum of material and fabrication costs (no markup yet)
-  const rawCost = materialCost + fabricationCost;
+  // Add installation cost if enabled
+  const installationCost = settings.includeInstallation ? (usableAreaSqft * 25) : 0; // $25/sqft default
+  
+  // Raw cost is the sum of all costs (no markup yet)
+  const rawCost = materialCost + fabricationCost + installationCost;
   
   // Final price applies markup to the entire raw cost
   const finalPrice = rawCost * markup;
@@ -97,11 +112,13 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
       usableAreaSqft,
       totalSlabsNeeded,
       efficiency,
-      materialCost,      // This is the base material cost (no markup)
-      fabricationCost,   // This is the base fabrication cost (no markup)
-      rawCost,          // This is material + fabrication (no markup)
-      finalPrice,       // This is the final price with markup applied to everything
-      topsPerSlab: maxPiecesPerSlab
+      materialCost,        // This is the base material cost (no markup)
+      fabricationCost,     // This is the base fabrication cost (no markup)
+      installationCost,    // This is the base installation cost (no markup)
+      rawCost,            // This is material + fabrication + installation (no markup)
+      finalPrice,         // This is the final price with markup applied to everything
+      topsPerSlab: maxPiecesPerSlab,
+      slabDimensions: `${slabWidth}" × ${slabHeight}"`
     }
   };
 };
