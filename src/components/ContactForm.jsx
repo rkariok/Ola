@@ -1,7 +1,7 @@
 // Save this as: components/ContactForm.jsx
 import { useState } from 'react';
 import { Card } from './ui/Card';
-import { AlertCircle } from './icons/Icons';
+import { AlertCircle, Sparkles } from './icons/Icons';
 import { parseProductText } from '../utils/aiDrawingAnalysis';
 
 export const ContactForm = ({ userInfo, onChange }) => {
@@ -56,7 +56,7 @@ export const ContactForm = ({ userInfo, onChange }) => {
   );
 };
 
-// NEW: Separate component for bulk import
+// NEW: Separate component for bulk import with updated icon
 export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
   const [bulkInput, setBulkInput] = useState('');
   const [parsing, setParsing] = useState(false);
@@ -94,12 +94,12 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
         
         // Clear input and show success
         setBulkInput('');
-        setParseMessage(`✅ Added ${newProducts.length} product${newProducts.length !== 1 ? 's' : ''}`);
+        setParseMessage(`✅ Added ${newProducts.length} type${newProducts.length !== 1 ? 's' : ''}`);
         
         // Clear message after 4 seconds
         setTimeout(() => setParseMessage(''), 4000);
       } else {
-        setParseMessage('❌ No products found in the text');
+        setParseMessage('❌ No types found in the text');
         setTimeout(() => setParseMessage(''), 5000);
       }
     } catch (error) {
@@ -114,8 +114,8 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <span className="text-purple-600">🤖</span>
-        Quick Product Import (Optional)
+        <Sparkles className="w-5 h-5 text-teal-600" />
+        Quick Type Import (Optional)
       </h3>
       
       <div>
@@ -135,14 +135,15 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
 One (1) Calacatta Laza Oro Kitchen Island (3'D x 8'W)
 FOSSIL GRAY – 2CM Quartz Polished (30x72)"
           rows={2}
-          className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+          className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
         />
         
         {/* Status messages */}
         {parsing && (
-          <p className="text-sm text-blue-600 mt-2 flex items-center gap-2">
-            <div className="animate-spin w-3 h-3 border border-blue-600 border-t-transparent rounded-full"></div>
-            🤖 Claude AI is parsing your list...
+          <p className="text-sm text-teal-600 mt-2 flex items-center gap-2">
+            <div className="animate-spin w-3 h-3 border border-teal-600 border-t-transparent rounded-full"></div>
+            <Sparkles className="w-4 h-4 animate-pulse" />
+            Claude AI is parsing your list...
           </p>
         )}
         
@@ -157,9 +158,10 @@ FOSSIL GRAY – 2CM Quartz Polished (30x72)"
         {bulkInput.trim() && !parsing && !parseMessage && (
           <button
             onClick={handleQuickParse}
-            className="mt-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1"
+            className="mt-2 px-3 py-1 text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors flex items-center gap-1"
           >
-            🤖 Parse with AI
+            <Sparkles className="w-4 h-4" />
+            Parse with AI
           </button>
         )}
       </div>
