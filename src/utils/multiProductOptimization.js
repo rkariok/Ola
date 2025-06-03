@@ -2,25 +2,33 @@
 
 export const optimizeMultiProductLayout = (products, stoneOptions, settings) => {
   try {
-    // Group products by stone type
-    const productsByStone = {};
+    // Group products by EXACT stone combination (type + thickness + finish)
+    const productsByExactStone = {};
     
     products.forEach((product, index) => {
       if (!product.stone || !product.width || !product.depth) return;
       
-      if (!productsByStone[product.stone]) {
-        productsByStone[product.stone] = [];
+      // Create a unique key that includes stone type, thickness, and finish
+      const stoneKey = `${product.stone}|${product.thickness}|${product.finish}`;
+      
+      if (!productsByExactStone[stoneKey]) {
+        productsByExactStone[stoneKey] = {
+          stoneType: product.stone,
+          thickness: product.thickness,
+          finish: product.finish,
+          pieces: []
+        };
       }
       
       // Create pieces for each product
       const quantity = parseInt(product.quantity) || 1;
       for (let i = 0; i < quantity; i++) {
-        productsByStone[product.stone].push({
+        productsByExactStone[stoneKey].pieces.push({
           productIndex: index,
           pieceIndex: i,
           width: parseFloat(product.width),
           depth: parseFloat(product.depth),
-          customName: product.customName || `Product ${index + 1}`,
+          customName: product.customName || `Type ${index + 1}`,
           edgeDetail: product.edgeDetail || 'Eased',
           priority: product.priority || 'normal',
           originalProduct: product
@@ -30,20 +38,33 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
     
     const optimizedResults = {};
     
-    // Optimize each stone type
-    Object.keys(productsByStone).forEach(stoneType => {
+    // Optimize each exact stone combination
+    Object.entries(productsByExactStone).forEach(([stoneKey, stoneGroup]) => {
       try {
-        const pieces = productsByStone[stoneType];
-        const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+        const { stoneType, thickness, finish, pieces } = stoneGroup;
+        
+        // Find ANY matching stone variant in options (we'll use the first match for slab dimensions)
+        const stone = stoneOptions.find(s => 
+          s["Stone Type"] === stoneType &&
+          s["Thickness"] === thickness &&
+          s["Finish"] === finish
+        );
         
         if (!stone) {
-          optimizedResults[stoneType] = { error: 'Stone type not found' };
+          console.warn(`Stone combination not found: ${stoneKey}`);
+          // Still track this as an error so it's not optimized incorrectly
+          optimizedResults[stoneType] = { 
+            error: 'Exact stone type/thickness/finish combination not found in database',
+            stoneType,
+            thickness,
+            finish
+          };
           return;
         }
         
         const slabWidth = parseFloat(stone["Slab Width"]) || 126;
         const slabHeight = parseFloat(stone["Slab Height"]) || 63;
-        const kerf = settings.includeKerf ? (settings.kerfWidth || 0.125) : 0;
+        const kerf = settings.kerfWidth || 0.125;
         
         // Sort pieces by priority and size (largest first)
         pieces.sort((a, b) => {
@@ -124,16 +145,21 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
           slab.efficiency = (usedArea / (slabWidth * slabHeight)) * 100;
         });
         
+        // Store results using just the stone type as the key for backward compatibility
         optimizedResults[stoneType] = {
           slabs,
           placedPieces,
           totalSlabs: slabs.length,
           averageEfficiency: slabs.length > 0 ? 
-            slabs.reduce((sum, s) => sum + s.efficiency, 0) / slabs.length : 0
+            slabs.reduce((sum, s) => sum + s.efficiency, 0) / slabs.length : 0,
+          // Include the exact combination info for reference
+          thickness,
+          finish,
+          stoneKey
         };
       } catch (error) {
-        console.error(`Error optimizing stone type ${stoneType}:`, error);
-        optimizedResults[stoneType] = { error: error.message };
+        console.error(`Error optimizing stone combination ${stoneKey}:`, error);
+        optimizedResults[stoneGroup.stoneType] = { error: error.message };
       }
     });
     
@@ -251,7 +277,13 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
       const result = optimizationResults[stoneType];
       if (result.error || !result.placedPieces) return;
       
-      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      // Find the stone with matching thickness and finish from the optimization result
+      const stone = stoneOptions.find(s => 
+        s["Stone Type"] === stoneType &&
+        s["Thickness"] === result.thickness &&
+        s["Finish"] === result.finish
+      );
+      
       if (!stone) return;
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
@@ -299,6 +331,14 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         
         if (!product) return;
         
+        // IMPORTANT: Only apply optimization if this product matches the exact combination
+        if (product.stone !== stoneType || 
+            product.thickness !== result.thickness || 
+            product.finish !== result.finish) {
+          console.warn(`Skipping optimization for product ${idx} - stone combination mismatch`);
+          return;
+        }
+        
         const w = parseFloat(product.width) || 0;
         const d = parseFloat(product.depth) || 0;
         const quantity = parseInt(product.quantity) || 1;
@@ -317,36 +357,4 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         const effectiveSlabs = actualSlabsUsed * areaRatio;
         
         // Calculate efficiency based on actual optimization
-        const slabWidth = parseFloat(stone["Slab Width"]) || 126;
-        const slabHeight = parseFloat(stone["Slab Height"]) || 63;
-        const theoreticalArea = effectiveSlabs * slabWidth * slabHeight;
-        const efficiency = theoreticalArea > 0 ? (productData.area / theoreticalArea) * 100 : 0;
-        
-        // FIX: Calculate actual pieces that can fit per slab based on optimization
-        // This is the actual count of this product's pieces divided by slabs they occupy
-        const piecesPerSlab = productData.count; // Since all pieces fit on 1 slab in this case
-        
-        optimizedProducts[idx].result = {
-          usableAreaSqft,
-          totalSlabsNeeded: effectiveSlabs,
-          efficiency,
-          materialCost,
-          fabricationCost,
-          rawCost,
-          finalPrice,
-          topsPerSlab: piecesPerSlab, // FIX: Use actual count instead of calculation
-          multiProductOptimized: true,
-          actualTotalSlabs: actualSlabsUsed,
-          areaRatio: areaRatio,
-          placementDetails: productData.pieces
-        };
-      });
-    });
-    
-    return optimizedProducts;
-  } catch (error) {
-    console.error('Error in applyMultiProductOptimization:', error);
-    // Return original products with standard calculation as fallback
-    return products;
-  }
-};
+        const slabWidth = parseFl
