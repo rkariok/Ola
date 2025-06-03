@@ -655,10 +655,16 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
     }, 0);
     
     totalPrice = 0;
-    Object.entries(optimizationData).forEach(([stoneType, result]) => {
+    Object.entries(optimizationData).forEach(([stoneKey, result]) => {
       if (result.error || !result.totalSlabs) return;
       
-      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      // Find a stone that matches the optimization group
+      const stone = stoneOptions.find(s => 
+        s["Stone Type"] === result.stoneType &&
+        s["Thickness"] === result.thickness &&
+        s["Finish"] === result.finish
+      );
+      
       if (!stone) return;
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
@@ -668,7 +674,10 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
       const fabricationCost = settings.includeFabrication ?
         allResults
-          .filter(p => p.stone === stoneType && p.result)
+          .filter(p => {
+            const productKey = `${p.stone}|${p.thickness}|${p.finish}`;
+            return productKey === stoneKey && p.result;
+          })
           .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0) : 0;
       
       totalPrice += materialCost + fabricationCost;
