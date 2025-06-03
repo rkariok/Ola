@@ -20,9 +20,9 @@ export const SettingsSidebar = ({ settings, onChange }) => {
         />
         
         <Toggle 
-          label="Include Kerf" 
-          checked={settings.includeKerf} 
-          onChange={() => updateSetting('includeKerf', !settings.includeKerf)} 
+          label="Include Installation" 
+          checked={settings.includeInstallation} 
+          onChange={() => updateSetting('includeInstallation', !settings.includeInstallation)} 
         />
         
         <Toggle 
@@ -33,7 +33,7 @@ export const SettingsSidebar = ({ settings, onChange }) => {
         
         <div className="border-t pt-6">
           <Toggle 
-            label="Multi-Product Optimization" 
+            label="Multi-Type Optimization" 
             checked={settings.multiProductOptimization} 
             onChange={() => updateSetting('multiProductOptimization', !settings.multiProductOptimization)} 
           />
@@ -49,9 +49,9 @@ export const SettingsSidebar = ({ settings, onChange }) => {
           <select
             value={settings.kerfWidth}
             onChange={(e) => updateSetting('kerfWidth', parseFloat(e.target.value))}
-            disabled={!settings.includeKerf}
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
+            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
+            <option value={0}>No Kerf / Zero Kerf</option>
             <option value={0.125}>1/8" (0.125) - Standard</option>
             <option value={0.1875}>3/16" (0.1875) - Thick</option>
             <option value={0.25}>1/4" (0.25) - Heavy Duty</option>
