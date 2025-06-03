@@ -1,6 +1,6 @@
-// Save this as: src/utils/multiProductOptimization.js
+// Save this as: src/utils/multiTypeOptimization.js
 
-export const optimizeMultiProductLayout = (products, stoneOptions, settings) => {
+export const optimizeMultiTypeLayout = (products, stoneOptions, settings) => {
   try {
     // Group products by stone type
     const productsByStone = {};
@@ -20,7 +20,7 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
           pieceIndex: i,
           width: parseFloat(product.width),
           depth: parseFloat(product.depth),
-          customName: product.customName || `Product ${index + 1}`,
+          customName: product.customName || `Type ${index + 1}`,
           edgeDetail: product.edgeDetail || 'Eased',
           priority: product.priority || 'normal',
           originalProduct: product
@@ -139,7 +139,7 @@ export const optimizeMultiProductLayout = (products, stoneOptions, settings) => 
     
     return optimizedResults;
   } catch (error) {
-    console.error('Error in optimizeMultiProductLayout:', error);
+    console.error('Error in optimizeMultiTypeLayout:', error);
     return {};
   }
 };
@@ -236,8 +236,8 @@ function calculateWaste(x, y, w, h, slabWidth, slabHeight) {
   return waste;
 }
 
-// Apply multi-product optimization results to products
-export const applyMultiProductOptimization = (products, optimizationResults, stoneOptions, settings) => {
+// Apply multi-type optimization results to products
+export const applyMultiTypeOptimization = (products, optimizationResults, stoneOptions, settings) => {
   try {
     const optimizedProducts = products.map(product => ({ ...product }));
     
@@ -310,7 +310,8 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         const materialCost = totalMaterialCost * areaRatio;
         
         const fabricationCost = usableAreaSqft * fabCost;
-        const rawCost = materialCost + fabricationCost;
+        const installationCost = settings.includeInstallation ? (usableAreaSqft * 15) : 0;
+        const rawCost = materialCost + fabricationCost + installationCost;
         const finalPrice = rawCost * markup;
         
         // Calculate effective slabs (fractional based on area used)
@@ -332,6 +333,7 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
           efficiency,
           materialCost,
           fabricationCost,
+          installationCost,
           rawCost,
           finalPrice,
           topsPerSlab: piecesPerSlab, // FIX: Use actual count instead of calculation
@@ -345,7 +347,7 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
     
     return optimizedProducts;
   } catch (error) {
-    console.error('Error in applyMultiProductOptimization:', error);
+    console.error('Error in applyMultiTypeOptimization:', error);
     // Return original products with standard calculation as fallback
     return products;
   }
