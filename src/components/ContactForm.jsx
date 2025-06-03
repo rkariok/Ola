@@ -114,7 +114,7 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
         Quick Product Import (Optional)
@@ -137,7 +137,7 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
 One (1) Calacatta Laza Oro Kitchen Island (3'D x 8'W)
 FOSSIL GRAY – 2CM Quartz Polished (30x72)"
           rows={2}
-          className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+          className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
         />
         
         {/* Status messages */}
@@ -159,7 +159,7 @@ FOSSIL GRAY – 2CM Quartz Polished (30x72)"
         {bulkInput.trim() && !parsing && !parseMessage && (
           <button
             onClick={handleQuickParse}
-            className="mt-2 px-3 py-1 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1"
+            className="mt-2 px-3 py-1 text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors flex items-center gap-1"
           >
             🤖 Parse with AI
           </button>
