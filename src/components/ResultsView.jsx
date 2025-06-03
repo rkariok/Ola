@@ -64,9 +64,6 @@ export const ResultsView = ({
       
       totalPrice += materialCost + fabricationCost;
     });
-      
-      totalPrice += materialCost + fabricationCost;
-    });
     
     totalPrice = totalPrice.toFixed(2);
     
@@ -159,18 +156,26 @@ export const ResultsView = ({
           <div className="space-y-6 mb-8">
             {settings?.multiProductOptimization && optimizationData ? (
               // Show multi-product optimized layouts
-              Object.entries(optimizationData).map(([stoneType, optimizationResult]) => {
+              Object.entries(optimizationData).map(([stoneKey, optimizationResult]) => {
                 if (optimizationResult.error || !optimizationResult.slabs) return null;
                 
-                const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
-                const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
-                const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
+                // Find stone for this optimization group
+                const stone = stoneOptions.find(s => 
+                  s["Stone Type"] === optimizationResult.stoneType &&
+                  s["Thickness"] === optimizationResult.thickness &&
+                  s["Finish"] === optimizationResult.finish
+                );
+                
+                if (!stone) return null;
+                
+                const slabWidth = parseFloat(stone["Slab Width"]) || 126;
+                const slabHeight = parseFloat(stone["Slab Height"]) || 63;
                 
                 return (
-                  <Card key={stoneType} className="p-6">
+                  <Card key={stoneKey} className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <BarChart3 className="w-5 h-5 text-purple-600" />
-                      Multi-Type Optimization: {stoneType}
+                      Multi-Type Optimization: {optimizationResult.stoneType}
                     </h3>
                     
                     <div className="space-y-6">
@@ -203,7 +208,10 @@ export const ResultsView = ({
                         <div>
                           <p className="text-sm text-purple-600">Types Combined</p>
                           <p className="text-2xl font-bold text-purple-900">
-                            {allResults.filter(p => p.stone === stoneType).length}
+                            {allResults.filter(p => {
+                              const pKey = `${p.stone}|${p.thickness}|${p.finish}`;
+                              return pKey === stoneKey;
+                            }).length}
                           </p>
                         </div>
                       </div>
