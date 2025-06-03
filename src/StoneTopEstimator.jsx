@@ -316,7 +316,7 @@ export default function StoneTopEstimator() {
               className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-all flex items-center justify-center gap-2 group"
             >
               <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Add Another Product
+              Add Another Type
             </button>
           </main>
         </div>
@@ -327,7 +327,7 @@ export default function StoneTopEstimator() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">
-              {products.length} product{products.length !== 1 ? 's' : ''} added
+              {products.length} type{products.length !== 1 ? 's' : ''} added
             </p>
             <div className="flex gap-3">
               <Button
@@ -335,7 +335,7 @@ export default function StoneTopEstimator() {
                 variant="outline"
               >
                 <Plus className="w-4 h-4" />
-                Add Product
+                Add Type
               </Button>
               <Button
                 onClick={calculateAll}
