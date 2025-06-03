@@ -96,7 +96,7 @@ export const ResultsView = ({
           variant="ghost"
           className="mb-6"
         >
-          ← Back to Products
+          ← Back to Types
         </Button>
         
         <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
@@ -129,9 +129,9 @@ export const ResultsView = ({
             <div className="flex items-center gap-3">
               <Sparkles className="w-6 h-6 text-purple-600" />
               <div>
-                <h3 className="font-semibold text-purple-900">Multi-Product Optimization Applied</h3>
+                <h3 className="font-semibold text-purple-900">Multi-Type Optimization Applied</h3>
                 <p className="text-sm text-purple-700 mt-1">
-                  Products with the same stone type have been optimized together to minimize waste and reduce total slabs needed.
+                  Types with the same stone have been optimized together to minimize waste and reduce total slabs needed.
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export const ResultsView = ({
                   <Card key={stoneType} className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <BarChart3 className="w-5 h-5 text-purple-600" />
-                      Multi-Product Optimization: {stoneType}
+                      Multi-Type Optimization: {stoneType}
                     </h3>
                     
                     <div className="space-y-6">
@@ -185,7 +185,7 @@ export const ResultsView = ({
                           <p className="text-2xl font-bold text-purple-900">{optimizationResult.averageEfficiency?.toFixed(1)}%</p>
                         </div>
                         <div>
-                          <p className="text-sm text-purple-600">Products Combined</p>
+                          <p className="text-sm text-purple-600">Types Combined</p>
                           <p className="text-2xl font-bold text-purple-900">
                             {allResults.filter(p => p.stone === stoneType).length}
                           </p>
@@ -215,7 +215,7 @@ export const ResultsView = ({
                   <Card key={productIndex} className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <BarChart3 className="w-5 h-5 text-teal-600" />
-                      Layout Visualization: {product.customName || `Product ${productIndex + 1}`}
+                      Layout Visualization: {product.customName || `Type ${productIndex + 1}`}
                     </h3>
                     
                     <div className="bg-gray-50 rounded-xl p-8">
@@ -224,7 +224,7 @@ export const ResultsView = ({
                         slabWidth={slabWidth}
                         slabHeight={slabHeight}
                         maxPiecesPerSlab={product.result.topsPerSlab}
-                        includeKerf={settings.includeKerf}
+                        includeKerf={settings.kerfWidth > 0}
                         kerfWidth={settings.kerfWidth}
                         showMaxLayout={false}
                       />
@@ -247,7 +247,7 @@ export const ResultsView = ({
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Kerf Width:</span>
-                            <span className="font-medium">{settings.includeKerf ? `${settings.kerfWidth}"` : 'Not included'}</span>
+                            <span className="font-medium">{settings.kerfWidth > 0 ? `${settings.kerfWidth}"` : 'No Kerf'}</span>
                           </div>
                         </div>
                       </div>
@@ -300,7 +300,7 @@ export const ResultsView = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">
-                        {p.customName || `Product ${i + 1}`}
+                        {p.customName || `Type ${i + 1}`}
                       </h3>
                       <p className="text-gray-600 text-sm">{p.stone}</p>
                     </div>
