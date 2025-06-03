@@ -98,17 +98,12 @@ export const ProductCard = ({
       return;
     }
     
-    // Get all options for this stone
-    const stoneOptions = getFieldOptions('Slab Size');
-    const thicknessOptions = getFieldOptions('Thickness');
-    const finishOptions = getFieldOptions('Finish');
+    // Reset dependent fields to empty (Select... mode)
+    updateField('slabSize', '');
+    updateField('thickness', '');
+    updateField('finish', '');
     
-    // Reset dependent fields to first available option
-    updateField('slabSize', stoneOptions[0] || '');
-    updateField('thickness', thicknessOptions[0] || '');
-    updateField('finish', finishOptions[0] || '');
-    
-    setNotification(`Stone changed to ${newStone}. Fields auto-updated.`);
+    setNotification(`Stone changed to ${newStone}. Please select slab size, thickness, and finish.`);
     setTimeout(() => setNotification(''), 3000);
   };
 
