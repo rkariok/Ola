@@ -20,7 +20,7 @@ export const ResultsView = ({
   sendingEmail,
   emailStatus 
 }) => {
-  // Calculate totals based on optimization mode (same logic as PDF)
+  // Calculate totals based on optimization mode
   let totalPrice, totalSlabs, avgEfficiency;
   
   if (settings?.multiProductOptimization && optimizationData) {
@@ -31,20 +31,11 @@ export const ResultsView = ({
     
     // Calculate total price based on optimized slabs
     totalPrice = 0;
-    Object.entries(optimizationData).forEach(([stoneKey, result]) => {
+    Object.entries(optimizationData).forEach(([stoneType, result]) => {
       if (result.error || !result.totalSlabs) return;
       
-      // Find a stone that matches the optimization group
-      const stone = stoneOptions.find(s => 
-        s["Stone Type"] === result.stoneType &&
-        s["Thickness"] === result.thickness &&
-        s["Finish"] === result.finish
-      );
-      
-      if (!stone) {
-        console.warn(`No stone found for optimization group: ${stoneKey}`);
-        return;
-      }
+      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+      if (!stone) return;
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
       const markup = parseFloat(stone["Mark Up"]) || 1;
@@ -53,14 +44,11 @@ export const ResultsView = ({
       // Material cost for optimized slabs
       const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
       
-      // Add fabrication costs from all products with markup
-      const fabricationCost = allResults
-        .filter(p => {
-          // Match products that belong to this optimization group
-          const productKey = `${p.stone}|${p.thickness}|${p.finish}`;
-          return productKey === stoneKey && p.result;
-        })
-        .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
+      // Add fabrication costs from all products with markup (if fabrication is enabled)
+      const fabricationCost = settings.includeFabrication ? 
+        allResults
+          .filter(p => p.stone === stoneType && p.result)
+          .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0) : 0;
       
       totalPrice += materialCost + fabricationCost;
     });
@@ -109,7 +97,7 @@ export const ResultsView = ({
           variant="ghost"
           className="mb-6"
         >
-          ← Back to Types
+          ← Back to Products
         </Button>
         
         <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
@@ -142,9 +130,9 @@ export const ResultsView = ({
             <div className="flex items-center gap-3">
               <Sparkles className="w-6 h-6 text-purple-600" />
               <div>
-                <h3 className="font-semibold text-purple-900">Multi-Type Optimization Applied</h3>
+                <h3 className="font-semibold text-purple-900">Multi-Product Optimization Applied</h3>
                 <p className="text-sm text-purple-700 mt-1">
-                  Types with the same stone type have been optimized together to minimize waste and reduce total slabs needed.
+                  Products with the same stone type have been optimized together to minimize waste and reduce total slabs needed.
                 </p>
               </div>
             </div>
@@ -156,26 +144,18 @@ export const ResultsView = ({
           <div className="space-y-6 mb-8">
             {settings?.multiProductOptimization && optimizationData ? (
               // Show multi-product optimized layouts
-              Object.entries(optimizationData).map(([stoneKey, optimizationResult]) => {
+              Object.entries(optimizationData).map(([stoneType, optimizationResult]) => {
                 if (optimizationResult.error || !optimizationResult.slabs) return null;
                 
-                // Find stone for this optimization group
-                const stone = stoneOptions.find(s => 
-                  s["Stone Type"] === optimizationResult.stoneType &&
-                  s["Thickness"] === optimizationResult.thickness &&
-                  s["Finish"] === optimizationResult.finish
-                );
-                
-                if (!stone) return null;
-                
-                const slabWidth = parseFloat(stone["Slab Width"]) || 126;
-                const slabHeight = parseFloat(stone["Slab Height"]) || 63;
+                const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
+                const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
+                const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
                 
                 return (
-                  <Card key={stoneKey} className="p-6">
+                  <Card key={stoneType} className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <BarChart3 className="w-5 h-5 text-purple-600" />
-                      Multi-Type Optimization: {optimizationResult.stoneType}
+                      Multi-Product Optimization: {stoneType}
                     </h3>
                     
                     <div className="space-y-6">
@@ -206,12 +186,9 @@ export const ResultsView = ({
                           <p className="text-2xl font-bold text-purple-900">{optimizationResult.averageEfficiency?.toFixed(1)}%</p>
                         </div>
                         <div>
-                          <p className="text-sm text-purple-600">Types Combined</p>
+                          <p className="text-sm text-purple-600">Products Combined</p>
                           <p className="text-2xl font-bold text-purple-900">
-                            {allResults.filter(p => {
-                              const pKey = `${p.stone}|${p.thickness}|${p.finish}`;
-                              return pKey === stoneKey;
-                            }).length}
+                            {allResults.filter(p => p.stone === stoneType).length}
                           </p>
                         </div>
                       </div>
@@ -239,7 +216,7 @@ export const ResultsView = ({
                   <Card key={productIndex} className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <BarChart3 className="w-5 h-5 text-teal-600" />
-                      Layout Visualization: {product.customName || `Type ${productIndex + 1}`}
+                      Layout Visualization: {product.customName || `Product ${productIndex + 1}`}
                     </h3>
                     
                     <div className="bg-gray-50 rounded-xl p-8">
@@ -271,7 +248,7 @@ export const ResultsView = ({
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Kerf Width:</span>
-                            <span className="font-medium">{settings.includeKerf ? `${settings.kerfWidth}"` : 'Not included'}</span>
+                            <span className="font-medium">{settings.kerfWidth}"</span>
                           </div>
                         </div>
                       </div>
@@ -311,10 +288,15 @@ export const ResultsView = ({
           </div>
         )}
 
-        {/* Results Cards - WITH IMPROVED SPACING */}
+        {/* Results Cards */}
         <div className="space-y-4 mb-8">
           {allResults.map((p, i) => {
-            const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
+            const stone = stoneOptions.find(s => 
+              s["Stone Type"] === p.stone &&
+              s["Slab Size"] === p.slabSize &&
+              s["Thickness"] === p.thickness &&
+              s["Finish"] === p.finish
+            );
             const markup = parseFloat(stone?.["Mark Up"]) || 1;
             
             return (
@@ -324,7 +306,7 @@ export const ResultsView = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">
-                        {p.customName || `Type ${i + 1}`}
+                        {p.customName || `Product ${i + 1}`}
                       </h3>
                       <p className="text-gray-600 text-sm">{p.stone}</p>
                     </div>
@@ -335,7 +317,7 @@ export const ResultsView = ({
                     )}
                   </div>
                   
-                  {/* Product Details Grid - Better spacing */}
+                  {/* Product Details Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-6">
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Size</p>
@@ -376,10 +358,12 @@ export const ResultsView = ({
                     </div>
                   </div>
                   
-                  {/* Cost Breakdown - New addition */}
+                  {/* Cost Breakdown */}
                   <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
-                    <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
-                    <span>Fabrication: <span className="font-semibold text-orange-600">${((p.result?.fabricationCost || 0) * markup)?.toFixed(0)}</span></span>
+                    <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup).toFixed(0)}</span></span>
+                    {settings.includeFabrication && (
+                      <span>Fabrication: <span className="font-semibold text-orange-600">${((p.result?.fabricationCost || 0) * markup).toFixed(0)}</span></span>
+                    )}
                   </div>
                 </div>
                 
@@ -405,15 +389,30 @@ export const ResultsView = ({
             <div className="text-right">
               <p className="text-teal-100 text-sm">
                 Material: ${allResults.reduce((sum, p) => {
-                  const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
+                  const stone = stoneOptions.find(s => 
+                    s["Stone Type"] === p.stone &&
+                    s["Slab Size"] === p.slabSize &&
+                    s["Thickness"] === p.thickness &&
+                    s["Finish"] === p.finish
+                  );
                   const markup = parseFloat(stone?.["Mark Up"]) || 1;
                   return sum + ((p.result?.materialCost || 0) * markup);
-                }, 0).toFixed(0)} • 
-                Fabrication: ${allResults.reduce((sum, p) => {
-                  const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
-                  const markup = parseFloat(stone?.["Mark Up"]) || 1;
-                  return sum + ((p.result?.fabricationCost || 0) * markup);
                 }, 0).toFixed(0)}
+                {settings.includeFabrication && (
+                  <>
+                    {' • '}
+                    Fabrication: ${allResults.reduce((sum, p) => {
+                      const stone = stoneOptions.find(s => 
+                        s["Stone Type"] === p.stone &&
+                        s["Slab Size"] === p.slabSize &&
+                        s["Thickness"] === p.thickness &&
+                        s["Finish"] === p.finish
+                      );
+                      const markup = parseFloat(stone?.["Mark Up"]) || 1;
+                      return sum + ((p.result?.fabricationCost || 0) * markup);
+                    }, 0).toFixed(0)}
+                  </>
+                )}
               </p>
             </div>
           </div>
