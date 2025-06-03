@@ -53,9 +53,6 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       
       totalPrice += materialCost + fabricationCost;
     });
-      
-      totalPrice += materialCost + fabricationCost;
-    });
     
     totalPrice = totalPrice.toFixed(2);
     
