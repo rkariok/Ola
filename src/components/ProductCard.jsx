@@ -79,6 +79,7 @@ export const ProductCard = ({
         )}
       </div>
       
+      {/* First row: Stone, Width, Depth, Quantity */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -142,6 +143,7 @@ export const ProductCard = ({
         </div>
       </div>
       
+      {/* Second row: Edge Detail, Finish, Thickness, Slab Size */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -159,52 +161,6 @@ export const ProductCard = ({
             <option value="Beveled">Beveled</option>
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Priority
-          </label>
-          <select
-            value={product.priority}
-            onChange={(e) => updateField('priority', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Custom Name
-          </label>
-          <input
-            type="text"
-            value={product.customName}
-            onChange={(e) => updateField('customName', e.target.value)}
-            placeholder="Kitchen Island"
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Upload Drawing
-          </label>
-          <label className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
-            <Upload className="w-4 h-4" />
-            {loadingAI ? 'Analyzing...' : 'Choose File'}
-            <input
-              type="file"
-              accept="image/*,.pdf,.dwg,.dxf"
-              onChange={(e) => onUpload(e, index)}
-              disabled={loadingAI}
-              className="hidden"
-            />
-          </label>
-        </div>
-      </div>
-      
-      {/* New row with 3 dropdowns and smaller notes field */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Finish
@@ -250,7 +206,23 @@ export const ProductCard = ({
             ))}
           </select>
         </div>
-        <div className="md:col-span-2">
+      </div>
+      
+      {/* Third row: Custom Name, Notes, Upload Drawing */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Custom Name
+          </label>
+          <input
+            type="text"
+            value={product.customName}
+            onChange={(e) => updateField('customName', e.target.value)}
+            placeholder="Kitchen Island"
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Notes
           </label>
@@ -261,6 +233,22 @@ export const ProductCard = ({
             rows={1}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Upload Drawing
+          </label>
+          <label className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
+            <Upload className="w-4 h-4" />
+            {loadingAI ? 'Analyzing...' : 'Choose File'}
+            <input
+              type="file"
+              accept="image/*,.pdf,.dwg,.dxf"
+              onChange={(e) => onUpload(e, index)}
+              disabled={loadingAI}
+              className="hidden"
+            />
+          </label>
         </div>
       </div>
       
