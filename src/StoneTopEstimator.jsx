@@ -47,11 +47,11 @@ export default function StoneTopEstimator() {
   // Settings
   const [settings, setSettings] = useState({
     includeInstallation: true,
+    includeFabrication: true,
     kerfWidth: 0.125,
     breakageBuffer: 10,
     showVisualLayouts: true,
-    multiProductOptimization: false,
-    includeFabrication: true
+    multiProductOptimization: false
   });
 
   // Load saved quotes and stone data on mount
