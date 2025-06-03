@@ -12,7 +12,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
   let totalPrice, totalSlabs, avgEfficiency;
   
   if (settings?.multiProductOptimization && optimizationData) {
-    // For multi-product optimization, use the actual optimized values
+    // For multi-type optimization, use the actual optimized values
     totalSlabs = Object.values(optimizationData).reduce((sum, result) => {
       return sum + (result.totalSlabs || 0);
     }, 0);
@@ -32,12 +32,16 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       // Material cost for optimized slabs
       const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
       
-      // Add fabrication costs from all products WITH MARKUP
+      // Add fabrication and installation costs from all products WITH MARKUP
       const fabricationCost = allResults
         .filter(p => p.stone === stoneType && p.result)
         .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
+        
+      const installationCost = allResults
+        .filter(p => p.stone === stoneType && p.result)
+        .reduce((sum, p) => sum + ((p.result.installationCost || 0) * markup), 0);
       
-      totalPrice += materialCost + fabricationCost;
+      totalPrice += materialCost + fabricationCost + installationCost;
     });
     
     totalPrice = totalPrice.toFixed(2);
@@ -255,8 +259,8 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
           letter-spacing: 0.05em;
         }
         
-        /* Products Section */
-        .products-section {
+        /* Types Section */
+        .types-section {
           margin-bottom: 30px;
         }
         
@@ -273,7 +277,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
           color: #1f2937;
         }
         
-        .product-card {
+        .type-card {
           background: white;
           border: 1px solid #e5e7eb;
           border-radius: 12px;
@@ -282,26 +286,26 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
           box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
-        .product-header {
+        .type-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 16px;
         }
         
-        .product-name {
+        .type-name {
           font-size: 18px;
           font-weight: 600;
           color: #1f2937;
         }
         
-        .product-price {
+        .type-price {
           font-size: 24px;
           font-weight: 700;
           color: #059669;
         }
         
-        .product-details {
+        .type-details {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 16px;
@@ -479,13 +483,13 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
         ${settings?.multiProductOptimization && optimizationData ? `
           <div style="background: #f3e8ff; border: 1px solid #c084fc; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
             <p style="color: #7c3aed; font-weight: 600; margin: 0;">
-              ✨ Multi-Product Optimization Applied - ${totalSlabs} Optimized Slab${totalSlabs !== 1 ? 's' : ''}
+              ✨ Multi-Type Optimization Applied - ${totalSlabs} Optimized Slab${totalSlabs !== 1 ? 's' : ''}
             </p>
           </div>
         ` : ''}
         
-        <!-- Products -->
-        <div class="products-section">
+        <!-- Types -->
+        <div class="types-section">
           <div class="section-header">
             <span style="font-size: 24px;">📦</span>
             <h3>Quote Details</h3>
@@ -503,12 +507,12 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
               : '-';
             
             return `
-              <div class="product-card">
-                <div class="product-header">
-                  <div class="product-name">${p.customName || `Product ${i + 1}`}</div>
-                  <div class="product-price">$${p.result?.finalPrice?.toFixed(2) || '0.00'}</div>
+              <div class="type-card">
+                <div class="type-header">
+                  <div class="type-name">${p.customName || `Type ${i + 1}`}</div>
+                  <div class="type-price">$${p.result?.finalPrice?.toFixed(2) || '0.00'}</div>
                 </div>
-                <div class="product-details">
+                <div class="type-details">
                   <div class="detail-item">
                     <div class="detail-label">Stone Type</div>
                     <div class="detail-value">${p.stone}</div>
@@ -551,6 +555,10 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
                   Material: <span style="color: #2563eb; font-weight: 600;">$${((p.result?.materialCost || 0) * markup).toFixed(0)}</span>
                   &nbsp;&nbsp;•&nbsp;&nbsp;
                   Fabrication: <span style="color: #ea580c; font-weight: 600;">$${((p.result?.fabricationCost || 0) * markup).toFixed(0)}</span>
+                  ${p.result?.installationCost ? `
+                    &nbsp;&nbsp;•&nbsp;&nbsp;
+                    Installation: <span style="color: #16a34a; font-weight: 600;">$${((p.result?.installationCost || 0) * markup).toFixed(0)}</span>
+                  ` : ''}
                 </div>
                 ${p.note ? `
                   <div style="margin-top: 12px; padding: 12px; background: #fef3c7; border-radius: 8px; font-size: 13px; color: #92400e;">
@@ -567,6 +575,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
           <div class="footer-content">
             <p><strong>This quote is valid for 30 days from the date above</strong></p>
             <p>Prices subject to material availability and final measurements</p>
+            ${settings?.includeInstallation ? '<p><em>Installation included in pricing</em></p>' : ''}
             
             <div class="contact-info">
               <div class="contact-item">
@@ -586,7 +595,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
           
           <p class="tagline">
             Generated by AIC Surfaces Stone Estimator 
-            ${settings?.multiProductOptimization ? '• Multi-Product Optimization Enabled' : ''} 
+            ${settings?.multiProductOptimization ? '• Multi-Type Optimization Enabled' : ''} 
             • Powered by AI
           </p>
         </div>
@@ -640,8 +649,11 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       const fabricationCost = allResults
         .filter(p => p.stone === stoneType && p.result)
         .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
+      const installationCost = allResults
+        .filter(p => p.stone === stoneType && p.result)
+        .reduce((sum, p) => sum + ((p.result.installationCost || 0) * markup), 0);
       
-      totalPrice += materialCost + fabricationCost;
+      totalPrice += materialCost + fabricationCost + installationCost;
     });
     
     totalPrice = totalPrice.toFixed(2);
@@ -660,7 +672,8 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       <div style="margin: 40px 0; padding: 20px; background: #f0fdfa; border-radius: 12px; text-align: center;">
         <h2 style="color: #0f766e; margin-bottom: 10px;">Total: $${totalPrice}</h2>
         <p style="color: #14b8a6;">Slabs Required: ${totalSlabs}</p>
-        ${settings?.multiProductOptimization ? '<p style="color: #7c3aed; font-weight: 600;">✨ Multi-Product Optimization Applied</p>' : ''}
+        ${settings?.multiProductOptimization ? '<p style="color: #7c3aed; font-weight: 600;">✨ Multi-Type Optimization Applied</p>' : ''}
+        ${settings?.includeInstallation ? '<p style="color: #059669; font-weight: 600;">✅ Installation Included</p>' : ''}
       </div>
       
       <div style="text-align: center; margin-top: 40px;">
