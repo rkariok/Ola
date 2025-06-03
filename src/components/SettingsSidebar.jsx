@@ -14,15 +14,15 @@ export const SettingsSidebar = ({ settings, onChange }) => {
       
       <div className="space-y-6">
         <Toggle 
-          label="Include Fabrication" 
-          checked={settings.includeFabrication} 
-          onChange={() => updateSetting('includeFabrication', !settings.includeFabrication)} 
-        />
-        
-        <Toggle 
           label="Include Installation" 
           checked={settings.includeInstallation} 
           onChange={() => updateSetting('includeInstallation', !settings.includeInstallation)} 
+        />
+        
+        <Toggle 
+          label="Include Fabrication" 
+          checked={settings.includeFabrication} 
+          onChange={() => updateSetting('includeFabrication', !settings.includeFabrication)} 
         />
         
         <Toggle 
