@@ -13,10 +13,27 @@ export const SettingsSidebar = ({ settings, onChange }) => {
       <h2 className="text-lg font-semibold text-gray-900 mb-6">Settings</h2>
       
       <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kerf Width
+          </label>
+          <select
+            value={settings.kerfWidth}
+            onChange={(e) => updateSetting('kerfWidth', parseFloat(e.target.value))}
+            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value={0}>No Kerf / Zero Kerf</option>
+            <option value={0.125}>1/8" (0.125) - Standard</option>
+            <option value={0.1875}>3/16" (0.1875) - Thick</option>
+            <option value={0.25}>1/4" (0.25) - Heavy Duty</option>
+            <option value={0.09375}>3/32" (0.094) - Thin</option>
+          </select>
+        </div>
+        
         <Toggle 
-          label="Include Kerf" 
-          checked={settings.includeKerf} 
-          onChange={() => updateSetting('includeKerf', !settings.includeKerf)} 
+          label="Include Installation" 
+          checked={settings.includeInstallation || false} 
+          onChange={() => updateSetting('includeInstallation', !settings.includeInstallation)} 
         />
         
         <Toggle 
@@ -34,23 +51,6 @@ export const SettingsSidebar = ({ settings, onChange }) => {
           <p className="text-xs text-gray-500 mt-2">
             Combine multiple products with the same stone type on single slabs to reduce waste
           </p>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Kerf Width
-          </label>
-          <select
-            value={settings.kerfWidth}
-            onChange={(e) => updateSetting('kerfWidth', parseFloat(e.target.value))}
-            disabled={!settings.includeKerf}
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50 disabled:bg-gray-50"
-          >
-            <option value={0.125}>1/8" (0.125) - Standard</option>
-            <option value={0.1875}>3/16" (0.1875) - Thick</option>
-            <option value={0.25}>1/4" (0.25) - Heavy Duty</option>
-            <option value={0.09375}>3/32" (0.094) - Thin</option>
-          </select>
         </div>
         
         <div>
