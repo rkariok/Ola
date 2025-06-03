@@ -86,7 +86,7 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   
   // Calculate costs WITHOUT markup first
   const materialCost = (slabCost * totalSlabsNeeded) * (1 + settings.breakageBuffer/100);
-  const fabricationCost = usableAreaSqft * fabCost;
+  const fabricationCost = settings.includeFabrication !== false ? (usableAreaSqft * fabCost) : 0;
   
   // Add installation cost if enabled
   const installationCost = settings.includeInstallation ? (usableAreaSqft * 15) : 0; // $15 per sqft for installation
