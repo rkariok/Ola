@@ -42,10 +42,10 @@ export default function StoneTopEstimator() {
   const [emailStatus, setEmailStatus] = useState('');
   const [savedQuotes, setSavedQuotes] = useState([]);
   
-  // Settings
+  // Settings - Updated to remove includeKerf and add includeInstallation
   const [settings, setSettings] = useState({
-    includeKerf: true,
     kerfWidth: 0.125,
+    includeInstallation: false,
     breakageBuffer: 10,
     showVisualLayouts: true,
     multiProductOptimization: false
@@ -140,20 +140,26 @@ export default function StoneTopEstimator() {
     }
   };
 
-  // Calculate all products
+  // Calculate all products - Updated to always include kerf consideration
   const calculateAll = () => {
     let results;
     let optimizationResults = null;
     
+    // Settings now always includes kerf (includeKerf removed, kerfWidth may be 0)
+    const updatedSettings = {
+      ...settings,
+      includeKerf: settings.kerfWidth > 0
+    };
+    
     if (settings.multiProductOptimization) {
       // Use multi-product optimization
-      optimizationResults = optimizeMultiProductLayout(products, stoneOptions, settings);
-      results = applyMultiProductOptimization(products, optimizationResults, stoneOptions, settings);
+      optimizationResults = optimizeMultiProductLayout(products, stoneOptions, updatedSettings);
+      results = applyMultiProductOptimization(products, optimizationResults, stoneOptions, updatedSettings);
       setOptimizationData(optimizationResults);
     } else {
       // Use standard calculation
       results = products.map((product) => 
-        calculateProductResults(product, stoneOptions, settings)
+        calculateProductResults(product, stoneOptions, updatedSettings)
       );
       setOptimizationData(null);
     }
@@ -300,7 +306,7 @@ export default function StoneTopEstimator() {
               className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-all flex items-center justify-center gap-2 group"
             >
               <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Add Another Product
+              Add Another Type
             </button>
           </main>
         </div>
@@ -311,7 +317,7 @@ export default function StoneTopEstimator() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">
-              {products.length} product{products.length !== 1 ? 's' : ''} added
+              {products.length} type{products.length !== 1 ? 's' : ''} added
             </p>
             <div className="flex gap-3">
               <Button
@@ -319,7 +325,7 @@ export default function StoneTopEstimator() {
                 variant="outline"
               >
                 <Plus className="w-4 h-4" />
-                Add Product
+                Add Type
               </Button>
               <Button
                 onClick={calculateAll}
