@@ -309,7 +309,7 @@ export const applyMultiTypeOptimization = (products, optimizationResults, stoneO
         const areaRatio = productData.area / totalPiecesArea;
         const materialCost = totalMaterialCost * areaRatio;
         
-        const fabricationCost = usableAreaSqft * fabCost;
+        const fabricationCost = settings.includeFabrication !== false ? (usableAreaSqft * fabCost) : 0;
         const installationCost = settings.includeInstallation ? (usableAreaSqft * 15) : 0;
         const rawCost = materialCost + fabricationCost + installationCost;
         const finalPrice = rawCost * markup;
