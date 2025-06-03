@@ -356,6 +356,9 @@ export const ResultsView = ({
                   <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
                     <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
                     <span>Fabrication: <span className="font-semibold text-orange-600">${((p.result?.fabricationCost || 0) * markup)?.toFixed(0)}</span></span>
+                    {p.result?.installationCost > 0 && (
+                      <span>Installation: <span className="font-semibold text-green-600">${((p.result?.installationCost || 0) * markup)?.toFixed(0)}</span></span>
+                    )}
                   </div>
                 </div>
                 
@@ -390,6 +393,13 @@ export const ResultsView = ({
                   const markup = parseFloat(stone?.["Mark Up"]) || 1;
                   return sum + ((p.result?.fabricationCost || 0) * markup);
                 }, 0).toFixed(0)}
+                {settings.includeInstallation && (
+                  <> • Installation: ${allResults.reduce((sum, p) => {
+                    const stone = stoneOptions.find(s => s["Stone Type"] === p.stone);
+                    const markup = parseFloat(stone?.["Mark Up"]) || 1;
+                    return sum + ((p.result?.installationCost || 0) * markup);
+                  }, 0).toFixed(0)}</>
+                )}
               </p>
             </div>
           </div>
