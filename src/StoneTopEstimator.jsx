@@ -161,6 +161,8 @@ export default function StoneTopEstimator() {
     let results;
     let optimizationResults = null;
     
+    console.log('Products before optimization:', products); // ADD THIS LINE FOR DEBUGGING
+    
     if (settings.multiProductOptimization) {
       // Use multi-product optimization
       optimizationResults = optimizeMultiProductLayout(products, stoneOptions, settings);
