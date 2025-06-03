@@ -46,7 +46,7 @@ export default function StoneTopEstimator() {
   
   // Settings
   const [settings, setSettings] = useState({
-    includeKerf: true,
+    includeInstallation: true,
     kerfWidth: 0.125,
     breakageBuffer: 10,
     showVisualLayouts: true,
