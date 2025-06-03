@@ -357,4 +357,36 @@ export const applyMultiProductOptimization = (products, optimizationResults, sto
         const effectiveSlabs = actualSlabsUsed * areaRatio;
         
         // Calculate efficiency based on actual optimization
-        const slabWidth = parseFl
+        const slabWidth = parseFloat(stone["Slab Width"]) || 126;
+        const slabHeight = parseFloat(stone["Slab Height"]) || 63;
+        const theoreticalArea = effectiveSlabs * slabWidth * slabHeight;
+        const efficiency = theoreticalArea > 0 ? (productData.area / theoreticalArea) * 100 : 0;
+        
+        // FIX: Calculate actual pieces that can fit per slab based on optimization
+        const piecesPerSlab = productData.count / actualSlabsUsed;
+        
+        optimizedProducts[idx].result = {
+          usableAreaSqft,
+          totalSlabsNeeded: effectiveSlabs,
+          efficiency,
+          materialCost,
+          fabricationCost,
+          rawCost,
+          finalPrice,
+          topsPerSlab: piecesPerSlab,
+          multiProductOptimized: true,
+          actualTotalSlabs: actualSlabsUsed,
+          areaRatio: areaRatio,
+          placementDetails: productData.pieces,
+          optimizationKey: result.stoneKey
+        };
+      });
+    });
+    
+    return optimizedProducts;
+  } catch (error) {
+    console.error('Error in applyMultiProductOptimization:', error);
+    // Return original products with standard calculation as fallback
+    return products;
+  }
+};
