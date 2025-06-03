@@ -4,7 +4,7 @@ import { ChevronRight } from './icons/Icons';
 export const ProgressSteps = ({ currentStep }) => {
   const steps = [
     { number: 1, label: 'Customer Info', completed: currentStep > 1 },
-    { number: 2, label: 'Products', completed: currentStep > 2 },
+    { number: 2, label: 'Types', completed: currentStep > 2 },
     { number: 3, label: 'Calculate', completed: currentStep > 3 },
     { number: 4, label: 'Results', completed: currentStep > 4 }
   ];
