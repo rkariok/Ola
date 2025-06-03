@@ -38,7 +38,7 @@ export const SettingsSidebar = ({ settings, onChange }) => {
             onChange={() => updateSetting('multiProductOptimization', !settings.multiProductOptimization)} 
           />
           <p className="text-xs text-gray-500 mt-2">
-            Combine multiple products with the same stone type on single slabs to reduce waste
+            Combine multiple types with the same stone type on single slabs to reduce waste
           </p>
         </div>
         
