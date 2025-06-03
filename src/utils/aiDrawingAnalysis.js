@@ -113,7 +113,7 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
   });
 
   const newProducts = [];
-  let productCounter = 1;
+  let typeCounter = 1;
 
   for (let i = 0; i < currentIndex; i++) {
     newProducts.push(products[i]);
@@ -122,12 +122,12 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
   Object.keys(groupedPieces).forEach(key => {
     const group = groupedPieces[key];
     
-    let productName;
+    let typeName;
     if (group.quantity > 1) {
       const baseName = group.names[0] || group.type;
-      productName = `${baseName} (${group.quantity}x)`;
+      typeName = `${baseName} (${group.quantity}x)`;
     } else {
-      productName = group.names[0] || `${group.type} ${productCounter}`;
+      typeName = group.names[0] || `${group.type} ${typeCounter}`;
     }
     
     newProducts.push({
@@ -137,14 +137,14 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
       quantity: group.quantity,
       edgeDetail: group.edgeDetail,
       result: null,
-      id: Date.now() + productCounter,
-      customName: productName,
+      id: Date.now() + typeCounter,
+      customName: typeName,
       priority: group.type === 'island' ? 'high' : 'normal',
       note: group.notes + (group.quantity > 1 ? ` | Combined ${group.quantity} identical pieces` : ''),
       aiExtracted: true,
       pieceType: group.type
     });
-    productCounter++;
+    typeCounter++;
   });
 
   for (let i = currentIndex + 1; i < products.length; i++) {
@@ -160,7 +160,7 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
         `📐 Drawing Type: ${drawingType.charAt(0).toUpperCase() + drawingType.slice(1)}\n` +
         `✅ Found: ${totalPieces} pieces (${uniqueSizes} unique sizes)\n` +
         `🎯 Confidence: ${confidence.charAt(0).toUpperCase() + confidence.slice(1)}\n\n` +
-        `📋 Products Created:\n${Object.keys(groupedPieces).map(key => {
+        `📋 Types Created:\n${Object.keys(groupedPieces).map(key => {
           const group = groupedPieces[key];
           return `• ${group.names[0]} - ${group.width}"×${group.depth}" (${group.quantity}x)`;
         }).join('\n')}`;
