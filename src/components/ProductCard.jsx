@@ -2,6 +2,7 @@
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { X, Upload } from './icons/Icons';
+import { useEffect, useState } from 'react';
 
 export const ProductCard = ({ 
   product, 
@@ -13,27 +14,158 @@ export const ProductCard = ({
   loadingAI,
   canRemove = true 
 }) => {
+  const [notification, setNotification] = useState('');
+
   const updateField = (field, value) => {
     onUpdate(index, field, value);
   };
 
-  // Get unique values from stone options for dropdowns
-  const getUniqueValues = (field) => {
-    const values = new Set();
+  // Get unique stone types
+  const getUniqueStoneTypes = () => {
+    const types = new Set();
     stoneOptions.forEach(stone => {
-      if (stone[field]) {
-        values.add(stone[field]);
+      if (stone["Stone Type"]) {
+        types.add(stone["Stone Type"]);
       }
     });
-    return Array.from(values);
+    return Array.from(types).sort();
   };
 
-  const finishOptions = getUniqueValues('Finish');
-  const thicknessOptions = getUniqueValues('Thickness');
-  const slabSizeOptions = getUniqueValues('Slab Size');
+  // Get available options for a specific stone type
+  const getOptionsForStone = (stoneType, field) => {
+    if (!stoneType) return [];
+    
+    const options = new Set();
+    stoneOptions
+      .filter(stone => stone["Stone Type"] === stoneType)
+      .forEach(stone => {
+        if (stone[field]) {
+          options.add(stone[field]);
+        }
+      });
+    
+    return Array.from(options).sort();
+  };
 
-  // Get current stone data to sync dependent fields
-  const currentStone = stoneOptions.find(s => s["Stone Type"] === product.stone);
+  // Check if a combination exists
+  const combinationExists = (stoneType, slabSize, thickness, finish) => {
+    return stoneOptions.some(stone => 
+      stone["Stone Type"] === stoneType &&
+      stone["Slab Size"] === slabSize &&
+      stone["Thickness"] === thickness &&
+      stone["Finish"] === finish
+    );
+  };
+
+  // Get most common combination for a stone
+  const getMostCommonCombination = (stoneType) => {
+    const stoneVariants = stoneOptions.filter(s => s["Stone Type"] === stoneType);
+    if (stoneVariants.length === 0) return null;
+    
+    // Priority order for defaults
+    const thicknessOrder = ['3CM', '2CM', '4CM', '5CM', '6CM'];
+    const finishOrder = ['Polished', 'Honed', 'Leathered', 'Brushed', 'Flamed'];
+    const sizeOrder = ['Standard', 'Jumbo', 'Super Jumbo', 'Compact'];
+    
+    // Find best match based on priority
+    let bestMatch = stoneVariants[0];
+    
+    for (const stone of stoneVariants) {
+      const currentThickIdx = thicknessOrder.indexOf(bestMatch["Thickness"]);
+      const newThickIdx = thicknessOrder.indexOf(stone["Thickness"]);
+      const currentFinishIdx = finishOrder.indexOf(bestMatch["Finish"]);
+      const newFinishIdx = finishOrder.indexOf(stone["Finish"]);
+      
+      if (newThickIdx !== -1 && (currentThickIdx === -1 || newThickIdx < currentThickIdx)) {
+        bestMatch = stone;
+      } else if (newThickIdx === currentThickIdx && newFinishIdx !== -1 && 
+                (currentFinishIdx === -1 || newFinishIdx < currentFinishIdx)) {
+        bestMatch = stone;
+      }
+    }
+    
+    return bestMatch;
+  };
+
+  // Smart auto-selection when stone changes
+  const handleStoneChange = (newStone) => {
+    updateField('stone', newStone);
+    
+    if (!newStone) return;
+    
+    // Get available options for new stone
+    const availableSizes = getOptionsForStone(newStone, 'Slab Size');
+    const availableThicknesses = getOptionsForStone(newStone, 'Thickness');
+    const availableFinishes = getOptionsForStone(newStone, 'Finish');
+    
+    let updates = {};
+    let notifications = [];
+    
+    // Auto-select if only one option
+    if (availableSizes.length === 1) {
+      updates.slabSize = availableSizes[0];
+      notifications.push(`Slab Size auto-selected: ${availableSizes[0]}`);
+    } else if (!availableSizes.includes(product.slabSize)) {
+      // Current selection not available, use smart default
+      const common = getMostCommonCombination(newStone);
+      updates.slabSize = common?.["Slab Size"] || availableSizes[0];
+    }
+    
+    if (availableThicknesses.length === 1) {
+      updates.thickness = availableThicknesses[0];
+      notifications.push(`Thickness auto-selected: ${availableThicknesses[0]}`);
+    } else if (!availableThicknesses.includes(product.thickness)) {
+      const common = getMostCommonCombination(newStone);
+      updates.thickness = common?.["Thickness"] || availableThicknesses[0];
+    }
+    
+    if (availableFinishes.length === 1) {
+      updates.finish = availableFinishes[0];
+      notifications.push(`Finish auto-selected: ${availableFinishes[0]}`);
+    } else if (!availableFinishes.includes(product.finish)) {
+      const common = getMostCommonCombination(newStone);
+      updates.finish = common?.["Finish"] || availableFinishes[0];
+    }
+    
+    // Apply all updates at once
+    Object.keys(updates).forEach(field => {
+      updateField(field, updates[field]);
+    });
+    
+    // Show notification if any auto-selection happened
+    if (notifications.length > 0) {
+      setNotification(notifications.join(', '));
+      setTimeout(() => setNotification(''), 3000);
+    }
+  };
+
+  // Get current available options
+  const slabSizeOptions = product.stone ? getOptionsForStone(product.stone, 'Slab Size') : [];
+  const thicknessOptions = product.stone ? getOptionsForStone(product.stone, 'Thickness') : [];
+  const finishOptions = product.stone ? getOptionsForStone(product.stone, 'Finish') : [];
+
+  // For AI-parsed products, ensure valid combination
+  useEffect(() => {
+    if (product.aiParsed && product.stone) {
+      const exists = combinationExists(
+        product.stone,
+        product.slabSize,
+        product.thickness,
+        product.finish
+      );
+      
+      if (!exists) {
+        const common = getMostCommonCombination(product.stone);
+        if (common) {
+          updateField('slabSize', common["Slab Size"]);
+          updateField('thickness', common["Thickness"]);
+          updateField('finish', common["Finish"]);
+          setNotification('AI selection adjusted to available options');
+          setTimeout(() => setNotification(''), 4000);
+        }
+      }
+    }
+  }, [product.aiParsed, product.stone]);
 
   return (
     <Card className={`p-6 ${product.aiParsed ? 'ring-1 ring-purple-200 bg-purple-50/30' : ''}`}>
@@ -63,6 +195,13 @@ export const ProductCard = ({
         </div>
       )}
 
+      {/* Notification */}
+      {notification && (
+        <div className="mb-3 px-3 py-2 bg-blue-100 border border-blue-200 rounded-lg animate-pulse">
+          <p className="text-sm text-blue-700">{notification}</p>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
           {product.customName || `Type ${index + 1}`}
@@ -87,32 +226,24 @@ export const ProductCard = ({
           </label>
           <select
             value={product.stone}
-            onChange={(e) => {
-              updateField('stone', e.target.value);
-              // Auto-update finish, thickness, and slab size based on selected stone
-              const selectedStone = stoneOptions.find(s => s["Stone Type"] === e.target.value);
-              if (selectedStone) {
-                if (selectedStone['Finish']) updateField('finish', selectedStone['Finish']);
-                if (selectedStone['Thickness']) updateField('thickness', selectedStone['Thickness']);
-                if (selectedStone['Slab Size']) updateField('slabSize', selectedStone['Slab Size']);
-              }
-            }}
+            onChange={(e) => handleStoneChange(e.target.value)}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
             <option value="">Select...</option>
-            {stoneOptions.map((stone, i) => (
-              <option key={i} value={stone["Stone Type"]}>{stone["Stone Type"]}</option>
+            {getUniqueStoneTypes().map((stone, i) => (
+              <option key={i} value={stone}>{stone}</option>
             ))}
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Slab Size
+            Slab Size {slabSizeOptions.length === 1 && <span className="text-xs text-gray-500">(auto)</span>}
           </label>
           <select
             value={product.slabSize || ''}
             onChange={(e) => updateField('slabSize', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            disabled={!product.stone || slabSizeOptions.length === 0}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50"
           >
             <option value="">Select...</option>
             {slabSizeOptions.map((size, i) => (
@@ -122,12 +253,13 @@ export const ProductCard = ({
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Thickness
+            Thickness {thicknessOptions.length === 1 && <span className="text-xs text-gray-500">(auto)</span>}
           </label>
           <select
             value={product.thickness || ''}
             onChange={(e) => updateField('thickness', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            disabled={!product.stone || thicknessOptions.length === 0}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50"
           >
             <option value="">Select...</option>
             {thicknessOptions.map((thickness, i) => (
@@ -137,12 +269,13 @@ export const ProductCard = ({
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Finish
+            Finish {finishOptions.length === 1 && <span className="text-xs text-gray-500">(auto)</span>}
           </label>
           <select
             value={product.finish || ''}
             onChange={(e) => updateField('finish', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            disabled={!product.stone || finishOptions.length === 0}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50"
           >
             <option value="">Select...</option>
             {finishOptions.map((finish, i) => (
