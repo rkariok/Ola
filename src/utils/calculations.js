@@ -70,9 +70,11 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
     name: `${product.stone} #${i + 1}`
   }));
 
+  // Always calculate with kerf consideration (kerf can be 0)
+  const includeKerf = settings.kerfWidth > 0;
   const maxPiecesPerSlab = calculateMaxPiecesPerSlab(
     w, d, slabWidth, slabHeight, 
-    settings.includeKerf, settings.kerfWidth
+    includeKerf, settings.kerfWidth
   );
   
   const area = w * d;
@@ -86,8 +88,11 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const materialCost = (slabCost * totalSlabsNeeded) * (1 + settings.breakageBuffer/100);
   const fabricationCost = usableAreaSqft * fabCost;
   
-  // Raw cost is the sum of material and fabrication costs (no markup yet)
-  const rawCost = materialCost + fabricationCost;
+  // Add installation cost if enabled
+  const installationCost = settings.includeInstallation ? (usableAreaSqft * 15) : 0; // $15 per sqft for installation
+  
+  // Raw cost is the sum of material, fabrication, and installation costs (no markup yet)
+  const rawCost = materialCost + fabricationCost + installationCost;
   
   // Final price applies markup to the entire raw cost
   const finalPrice = rawCost * markup;
@@ -100,7 +105,8 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
       efficiency,
       materialCost,      // This is the base material cost (no markup)
       fabricationCost,   // This is the base fabrication cost (no markup)
-      rawCost,          // This is material + fabrication (no markup)
+      installationCost,  // This is the base installation cost (no markup)
+      rawCost,          // This is material + fabrication + installation (no markup)
       finalPrice,       // This is the final price with markup applied to everything
       topsPerSlab: maxPiecesPerSlab
     }
