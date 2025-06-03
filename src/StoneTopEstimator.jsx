@@ -29,8 +29,10 @@ export default function StoneTopEstimator() {
       result: null, 
       id: Date.now(),
       customName: '',
-      priority: 'normal',
-      note: ''
+      note: '',
+      finish: '',
+      thickness: '',
+      slabSize: ''
     }
   ]);
   const [allResults, setAllResults] = useState([]);
@@ -63,9 +65,19 @@ export default function StoneTopEstimator() {
       .then((res) => res.json())
       .then((data) => {
         setStoneOptions(data);
-        setProducts((prev) =>
-          prev.map((p) => ({ ...p, stone: data[0]?.["Stone Type"] || '' }))
-        );
+        // Set initial product with values from first stone
+        if (data && data.length > 0) {
+          const firstStone = data[0];
+          setProducts((prev) =>
+            prev.map((p) => ({ 
+              ...p, 
+              stone: firstStone["Stone Type"] || '',
+              finish: firstStone["Finish"] || '',
+              thickness: firstStone["Thickness"] || '',
+              slabSize: firstStone["Slab Size"] || ''
+            }))
+          );
+        }
       })
       .catch((error) => {
         console.error("Failed to load stone data:", error);
@@ -81,10 +93,11 @@ export default function StoneTopEstimator() {
   };
 
   const addProduct = () => {
+    const firstStone = stoneOptions[0] || {};
     setProducts([
       ...products,
       { 
-        stone: stoneOptions[0]?.["Stone Type"] || '', 
+        stone: firstStone["Stone Type"] || '', 
         width: '', 
         depth: '', 
         quantity: 1, 
@@ -92,8 +105,10 @@ export default function StoneTopEstimator() {
         result: null, 
         id: Date.now(),
         customName: '',
-        priority: 'normal',
-        note: ''
+        note: '',
+        finish: firstStone["Finish"] || '',
+        thickness: firstStone["Thickness"] || '',
+        slabSize: firstStone["Slab Size"] || ''
       }
     ]);
   };
