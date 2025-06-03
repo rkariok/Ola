@@ -56,6 +56,35 @@ export const ContactForm = ({ userInfo, onChange }) => {
   );
 };
 
+// Helper to find best combination for AI parsed products
+const findBestCombination = (stoneType, stoneOptions) => {
+  const stoneVariants = stoneOptions.filter(s => s["Stone Type"] === stoneType);
+  if (stoneVariants.length === 0) return null;
+  
+  // Priority order for defaults
+  const thicknessOrder = ['3CM', '2CM', '4CM', '5CM', '6CM'];
+  const finishOrder = ['Polished', 'Honed', 'Leathered', 'Brushed', 'Flamed'];
+  
+  // Find best match based on priority
+  let bestMatch = stoneVariants[0];
+  
+  for (const stone of stoneVariants) {
+    const currentThickIdx = thicknessOrder.indexOf(bestMatch["Thickness"]);
+    const newThickIdx = thicknessOrder.indexOf(stone["Thickness"]);
+    const currentFinishIdx = finishOrder.indexOf(bestMatch["Finish"]);
+    const newFinishIdx = finishOrder.indexOf(stone["Finish"]);
+    
+    if (newThickIdx !== -1 && (currentThickIdx === -1 || newThickIdx < currentThickIdx)) {
+      bestMatch = stone;
+    } else if (newThickIdx === currentThickIdx && newFinishIdx !== -1 && 
+              (currentFinishIdx === -1 || newFinishIdx < currentFinishIdx)) {
+      bestMatch = stone;
+    }
+  }
+  
+  return bestMatch;
+};
+
 // NEW: Separate component for bulk import
 export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
   const [bulkInput, setBulkInput] = useState('');
@@ -73,31 +102,70 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
       const result = await parseProductText(bulkInput, stoneOptions);
       
       if (result.products && result.products.length > 0) {
-        // Convert to your product format
-        const newProducts = result.products.map((p, index) => ({
-          stone: p.stoneType || stoneOptions[0]?.["Stone Type"] || '',
-          width: p.width.toString(),
-          depth: p.depth.toString(),
-          quantity: p.quantity,
-          edgeDetail: 'Eased',
-          result: null,
-          id: Date.now() + index,
-          customName: p.name,
-          priority: 'normal',
-          note: p.features || '',
-          aiParsed: true,
-          confidence: p.confidence
-        }));
+        let adjustmentMessages = [];
+        
+        // Convert to your product format with smart defaults
+        const newProducts = result.products.map((p, index) => {
+          const selectedStone = p.stoneType || stoneOptions[0]?.["Stone Type"] || '';
+          
+          // Find best combination for this stone
+          const bestCombination = findBestCombination(selectedStone, stoneOptions);
+          
+          // Check if AI's suggestions are available
+          let finalFinish = bestCombination?.["Finish"] || '';
+          let finalThickness = bestCombination?.["Thickness"] || '';
+          let finalSlabSize = bestCombination?.["Slab Size"] || '';
+          
+          // If AI detected specific finish/thickness, check if available
+          if (p.finish && stoneOptions.some(s => 
+            s["Stone Type"] === selectedStone && s["Finish"] === p.finish
+          )) {
+            finalFinish = p.finish;
+          } else if (p.finish) {
+            adjustmentMessages.push(`${p.name}: ${p.finish} not available, using ${finalFinish}`);
+          }
+          
+          if (p.thickness && stoneOptions.some(s => 
+            s["Stone Type"] === selectedStone && s["Thickness"] === p.thickness
+          )) {
+            finalThickness = p.thickness;
+          } else if (p.thickness) {
+            adjustmentMessages.push(`${p.name}: ${p.thickness} not available, using ${finalThickness}`);
+          }
+          
+          return {
+            stone: selectedStone,
+            width: p.width.toString(),
+            depth: p.depth.toString(),
+            quantity: p.quantity,
+            edgeDetail: 'Eased',
+            result: null,
+            id: Date.now() + index,
+            customName: p.name,
+            note: p.features || '',
+            aiParsed: true,
+            confidence: p.confidence,
+            finish: finalFinish,
+            thickness: finalThickness,
+            slabSize: finalSlabSize
+          };
+        });
         
         // Send to parent component
         onProductsParsed(newProducts);
         
         // Clear input and show success
         setBulkInput('');
-        setParseMessage(`✅ Added ${newProducts.length} product${newProducts.length !== 1 ? 's' : ''}`);
+        let message = `✅ Added ${newProducts.length} product${newProducts.length !== 1 ? 's' : ''}`;
         
-        // Clear message after 4 seconds
-        setTimeout(() => setParseMessage(''), 4000);
+        if (adjustmentMessages.length > 0) {
+          message += '\n⚠️ ' + adjustmentMessages.join('\n⚠️ ');
+        }
+        
+        setParseMessage(message);
+        
+        // Clear message after 6 seconds (longer for adjustments)
+        setTimeout(() => setParseMessage(''), adjustmentMessages.length > 0 ? 6000 : 4000);
       } else {
         setParseMessage('❌ No products found in the text');
         setTimeout(() => setParseMessage(''), 5000);
@@ -149,11 +217,13 @@ FOSSIL GRAY – 2CM Quartz Polished (30x72)"
         )}
         
         {parseMessage && (
-          <p className={`text-sm mt-2 ${
+          <div className={`text-sm mt-2 ${
             parseMessage.includes('✅') ? 'text-green-600' : 'text-red-600'
           }`}>
-            {parseMessage}
-          </p>
+            {parseMessage.split('\n').map((line, i) => (
+              <p key={i} className={line.includes('⚠️') ? 'text-orange-600' : ''}>{line}</p>
+            ))}
+          </div>
         )}
         
         {bulkInput.trim() && !parsing && !parseMessage && (
