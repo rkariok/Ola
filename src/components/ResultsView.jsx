@@ -31,11 +31,20 @@ export const ResultsView = ({
     
     // Calculate total price based on optimized slabs
     totalPrice = 0;
-    Object.entries(optimizationData).forEach(([stoneType, result]) => {
+    Object.entries(optimizationData).forEach(([stoneKey, result]) => {
       if (result.error || !result.totalSlabs) return;
       
-      const stone = stoneOptions.find(s => s["Stone Type"] === stoneType);
-      if (!stone) return;
+      // Find a stone that matches the optimization group
+      const stone = stoneOptions.find(s => 
+        s["Stone Type"] === result.stoneType &&
+        s["Thickness"] === result.thickness &&
+        s["Finish"] === result.finish
+      );
+      
+      if (!stone) {
+        console.warn(`No stone found for optimization group: ${stoneKey}`);
+        return;
+      }
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
       const markup = parseFloat(stone["Mark Up"]) || 1;
@@ -46,8 +55,15 @@ export const ResultsView = ({
       
       // Add fabrication costs from all products with markup
       const fabricationCost = allResults
-        .filter(p => p.stone === stoneType && p.result)
+        .filter(p => {
+          // Match products that belong to this optimization group
+          const productKey = `${p.stone}|${p.thickness}|${p.finish}`;
+          return productKey === stoneKey && p.result;
+        })
         .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
+      
+      totalPrice += materialCost + fabricationCost;
+    });
       
       totalPrice += materialCost + fabricationCost;
     });
