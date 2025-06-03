@@ -79,7 +79,7 @@ export const sendQuoteEmail = async (userInfo, allResults, stoneOptions) => {
           
           <div style="text-align: center; margin: 40px 0;">
             <a href="#" style="display: inline-block; background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              Accept Quote & Schedule Consultation
+              Accept Quote &amp; Schedule Consultation
             </a>
           </div>
           
@@ -111,4 +111,26 @@ export const sendQuoteEmail = async (userInfo, allResults, stoneOptions) => {
       types_list: allResults.map(p => 
         `- ${p.customName || 'Type'}: ${p.stone} ${p.width}"×${p.depth}" (Qty: ${p.quantity}) - $${p.result?.finalPrice?.toFixed(2) || '0.00'}`
       ).join('\n'),
-      quote_date: new Date().
+      quote_date: new Date().toLocaleDateString(),
+      html_content: emailHTML
+    };
+
+    const response = await window.emailjs.send(
+      'service_4xwxsbp',
+      'template_pw68h0p',
+      templateParams
+    );
+
+    if (response.status === 200) {
+      alert(`✅ Quote sent successfully to ${userInfo.email}!\n\nThe customer will receive a beautifully formatted quote with all details.`);
+      return { success: true };
+    } else {
+      throw new Error('Failed to send email');
+    }
+    
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    alert(`❌ Failed to send email: ${error.message || 'Unknown error'}\n\nPlease check your EmailJS configuration and try again.`);
+    return { success: false, error: error.message };
+  }
+};
