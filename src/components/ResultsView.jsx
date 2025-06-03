@@ -123,7 +123,7 @@ export const ResultsView = ({
           </Card>
         </div>
 
-        {/* Multi-Product Optimization Alert */}
+        {/* Multi-Type Optimization Alert */}
         {settings?.multiProductOptimization && optimizationData && (
           <Card className="p-4 mb-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
             <div className="flex items-center gap-3">
@@ -296,7 +296,7 @@ export const ResultsView = ({
             return (
               <Card key={i} className="p-8 hover:shadow-md transition-shadow">
                 <div className="flex flex-col gap-6">
-                  {/* Product Header */}
+                  {/* Type Header */}
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">
@@ -311,7 +311,7 @@ export const ResultsView = ({
                     )}
                   </div>
                   
-                  {/* Product Details Grid - Better spacing */}
+                  {/* Type Details Grid - Better spacing */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-6">
                     <div className="text-center">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Size</p>
